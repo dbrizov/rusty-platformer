@@ -12,7 +12,7 @@ pub fn init() {
 
 pub fn run() {
     let sdl: sdl2::Sdl = sdl2::init().unwrap();
-    let mut time: time::Time = time::Time::new(&sdl, FPS);
+    let mut time: time::Time = time::Time::new(&sdl, FPS).unwrap();
     let video: sdl2::VideoSubsystem = sdl.video().unwrap();
     let _window: sdl2::video::Window = video
         .window(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT)
