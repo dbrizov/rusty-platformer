@@ -7,7 +7,7 @@ const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
 pub fn init() {
-    let _input_config: input::InputConfig = input::get_input_config();
+    let _input_mappings: input::InputMappings = input::get_input_mappings();
 }
 
 pub fn run() {
