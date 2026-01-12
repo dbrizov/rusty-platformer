@@ -1,3 +1,5 @@
+use engine::game_loop;
+
 fn main() {
-    println!("Hello, world!");
+    game_loop::run();
 }
