@@ -3,7 +3,7 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 
 // Public
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum InputEventType {
     Pressed,
     Released,
@@ -67,6 +67,40 @@ impl Input {
                     });
                 }
             }
+        }
+
+        // Dispatch axis events
+        for (axis, cfg) in &self.m_input_mappings.axes {
+            let any_positive: bool = cfg
+                .positive
+                .iter()
+                .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
+            let any_negative: bool = cfg
+                .negative
+                .iter()
+                .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
+
+            let mut axis_value = *self.m_axis_values.get(axis).unwrap();
+
+            if (any_positive && any_negative) || (!any_positive && !any_negative) {
+                if axis_value < 0.0 {
+                    axis_value = (axis_value + cfg.deceleration * delta_time).clamp(-1.0, 0.0);
+                } else if axis_value > 0.0 {
+                    axis_value = (axis_value - cfg.deceleration * delta_time).clamp(0.0, 1.0);
+                }
+            } else if any_positive {
+                axis_value = (axis_value + cfg.acceleration * delta_time).clamp(-1.0, 1.0);
+            } else if any_negative {
+                axis_value = (axis_value - cfg.acceleration * delta_time).clamp(-1.0, 1.0);
+            }
+
+            self.m_axis_values.insert(axis.clone(), axis_value);
+
+            self.dispatch_event(InputEvent {
+                ev_name: axis.clone(),
+                ev_type: InputEventType::Axis,
+                axis_value,
+            });
         }
     }
 
@@ -212,8 +246,7 @@ fn get_input_mappings() -> Result<InputMappings, String> {
     let input_settings_path: String = get_input_settings_path();
     let input_config: InputConfig = InputConfig::from_file(&input_settings_path)
         .map_err(|err| format!("Failed to create InputConfig from file: {}", err))?;
-    let input_mappings: InputMappings = InputMappings::from_config(input_config)
-        .map_err(|err| format!("Failed to create InputMappings from config: {}", err))?;
+    let input_mappings: InputMappings = InputMappings::from_config(input_config)?;
 
     Ok(input_mappings)
 }
