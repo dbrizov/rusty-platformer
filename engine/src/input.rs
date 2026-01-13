@@ -1,6 +1,6 @@
 use sdl2::keyboard::Scancode;
 use serde::Deserialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 // Public
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -223,31 +223,30 @@ impl InputMappings {
     }
 
     fn relevant_keys(&self) -> Vec<Scancode> {
-        let mut keys_set: HashSet<Scancode> = HashSet::new();
-        let mut keys_vec: Vec<Scancode> = Vec::new();
+        let mut keys: Vec<Scancode> = Vec::new();
         for pair in &self.actions {
             for key in pair.1 {
-                if keys_set.insert(*key) {
-                    keys_vec.push(*key);
+                if !keys.contains(key) {
+                    keys.push(*key);
                 }
             }
         }
 
         for pair in &self.axes {
             for key in &pair.1.positive {
-                if keys_set.insert(*key) {
-                    keys_vec.push(*key);
+                if !keys.contains(key) {
+                    keys.push(*key);
                 }
             }
 
             for key in &pair.1.negative {
-                if keys_set.insert(*key) {
-                    keys_vec.push(*key);
+                if !keys.contains(key) {
+                    keys.push(*key);
                 }
             }
         }
 
-        keys_vec
+        keys
     }
 }
 
