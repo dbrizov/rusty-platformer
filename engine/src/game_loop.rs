@@ -20,6 +20,10 @@ pub fn run() {
     let mut events: Vec<sdl2::event::Event> = Vec::new();
     let mut event_pump: sdl2::EventPump = sdl.event_pump().unwrap();
 
+    input.on_input_event.push(Box::new(|event| {
+        println!("Event: {:?}", event);
+    }));
+
     'running: loop {
         events.clear();
         for event in event_pump.poll_iter() {

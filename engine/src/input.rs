@@ -23,8 +23,8 @@ pub struct Input {
     m_input_mappings: InputMappings,
     m_axis_values: HashMap<String, f32>,
     m_relevant_keys: Vec<Scancode>,
-    m_pressed_keys_this_frame: HashSet<Scancode>,
-    m_pressed_keys_last_frame: HashSet<Scancode>,
+    m_pressed_keys_this_frame: Vec<Scancode>,
+    m_pressed_keys_last_frame: Vec<Scancode>,
 }
 
 impl Input {
@@ -42,8 +42,8 @@ impl Input {
             m_input_mappings: input_mappings,
             m_axis_values: axis_values,
             m_relevant_keys: relevant_keys,
-            m_pressed_keys_this_frame: HashSet::new(),
-            m_pressed_keys_last_frame: HashSet::new(),
+            m_pressed_keys_this_frame: Vec::new(),
+            m_pressed_keys_last_frame: Vec::new(),
         })
     }
 
@@ -83,8 +83,10 @@ impl Input {
                 .iter()
                 .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
 
-            let new_axis_value = {
+            let old_axis_value: f32;
+            let new_axis_value: f32 = {
                 let axis_value: &mut f32 = self.m_axis_values.get_mut(axis).unwrap();
+                old_axis_value = *axis_value;
 
                 if (any_positive && any_negative) || (!any_positive && !any_negative) {
                     if *axis_value < 0.0 {
@@ -105,24 +107,26 @@ impl Input {
                 *axis_value
             };
 
-            self.dispatch_event(InputEvent {
-                ev_name: axis,
-                ev_type: InputEventType::Axis,
-                axis_value: new_axis_value,
-            });
+            if old_axis_value != new_axis_value {
+                self.dispatch_event(InputEvent {
+                    ev_name: axis,
+                    ev_type: InputEventType::Axis,
+                    axis_value: new_axis_value,
+                });
+            }
         }
     }
 
     fn update_pressed_keys(&mut self, keyboard_state: &sdl2::keyboard::KeyboardState) {
         self.m_pressed_keys_last_frame.clear();
         for key in &self.m_pressed_keys_this_frame {
-            self.m_pressed_keys_last_frame.insert(*key);
+            self.m_pressed_keys_last_frame.push(*key);
         }
 
         self.m_pressed_keys_this_frame.clear();
         for key in &self.m_relevant_keys {
             if keyboard_state.is_scancode_pressed(*key) {
-                self.m_pressed_keys_this_frame.insert(*key);
+                self.m_pressed_keys_this_frame.push(*key);
             }
         }
     }
