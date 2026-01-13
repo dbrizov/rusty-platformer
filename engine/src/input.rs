@@ -3,16 +3,16 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 
 // Public
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum InputEventType {
     Pressed,
     Released,
     Axis,
 }
 
-#[derive(Debug, Clone)]
-pub struct InputEvent {
-    pub ev_name: String,
+#[derive(Debug)]
+pub struct InputEvent<'a> {
+    pub ev_name: &'a str,
     pub ev_type: InputEventType,
     pub axis_value: f32,
 }
@@ -22,6 +22,7 @@ pub struct Input {
 
     m_input_mappings: InputMappings,
     m_axis_values: HashMap<String, f32>,
+    m_relevant_keys: Vec<Scancode>,
     m_pressed_keys_this_frame: HashSet<Scancode>,
     m_pressed_keys_last_frame: HashSet<Scancode>,
 }
@@ -29,6 +30,7 @@ pub struct Input {
 impl Input {
     pub fn new() -> Result<Self, String> {
         let input_mappings: InputMappings = get_input_mappings()?;
+        let relevant_keys: Vec<Scancode> = input_mappings.relevant_keys();
         let axis_values: HashMap<String, f32> = input_mappings
             .axes
             .keys()
@@ -39,6 +41,7 @@ impl Input {
             on_input_event: Vec::new(),
             m_input_mappings: input_mappings,
             m_axis_values: axis_values,
+            m_relevant_keys: relevant_keys,
             m_pressed_keys_this_frame: HashSet::new(),
             m_pressed_keys_last_frame: HashSet::new(),
         })
@@ -55,13 +58,13 @@ impl Input {
 
                 if pressed_now && !pressed_before {
                     self.dispatch_event(InputEvent {
-                        ev_name: action.clone(),
+                        ev_name: action,
                         ev_type: InputEventType::Pressed,
                         axis_value: 0.0,
                     });
                 } else if pressed_before && !pressed_now {
                     self.dispatch_event(InputEvent {
-                        ev_name: action.clone(),
+                        ev_name: action,
                         ev_type: InputEventType::Released,
                         axis_value: 0.0,
                     });
@@ -70,36 +73,42 @@ impl Input {
         }
 
         // Dispatch axis events
-        for (axis, cfg) in &self.m_input_mappings.axes {
-            let any_positive: bool = cfg
+        for (axis, axis_mapping) in &self.m_input_mappings.axes {
+            let any_positive: bool = axis_mapping
                 .positive
                 .iter()
                 .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
-            let any_negative: bool = cfg
+            let any_negative: bool = axis_mapping
                 .negative
                 .iter()
                 .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
 
-            let mut axis_value = *self.m_axis_values.get(axis).unwrap();
+            let new_axis_value = {
+                let axis_value: &mut f32 = self.m_axis_values.get_mut(axis).unwrap();
 
-            if (any_positive && any_negative) || (!any_positive && !any_negative) {
-                if axis_value < 0.0 {
-                    axis_value = (axis_value + cfg.deceleration * delta_time).clamp(-1.0, 0.0);
-                } else if axis_value > 0.0 {
-                    axis_value = (axis_value - cfg.deceleration * delta_time).clamp(0.0, 1.0);
+                if (any_positive && any_negative) || (!any_positive && !any_negative) {
+                    if *axis_value < 0.0 {
+                        *axis_value =
+                            (*axis_value + axis_mapping.deceleration * delta_time).clamp(-1.0, 0.0);
+                    } else if *axis_value > 0.0 {
+                        *axis_value =
+                            (*axis_value - axis_mapping.deceleration * delta_time).clamp(0.0, 1.0);
+                    }
+                } else if any_positive {
+                    *axis_value =
+                        (*axis_value + axis_mapping.acceleration * delta_time).clamp(-1.0, 1.0);
+                } else if any_negative {
+                    *axis_value =
+                        (*axis_value - axis_mapping.acceleration * delta_time).clamp(-1.0, 1.0);
                 }
-            } else if any_positive {
-                axis_value = (axis_value + cfg.acceleration * delta_time).clamp(-1.0, 1.0);
-            } else if any_negative {
-                axis_value = (axis_value - cfg.acceleration * delta_time).clamp(-1.0, 1.0);
-            }
 
-            self.m_axis_values.insert(axis.clone(), axis_value);
+                *axis_value
+            };
 
             self.dispatch_event(InputEvent {
-                ev_name: axis.clone(),
+                ev_name: axis,
                 ev_type: InputEventType::Axis,
-                axis_value,
+                axis_value: new_axis_value,
             });
         }
     }
@@ -111,8 +120,7 @@ impl Input {
         }
 
         self.m_pressed_keys_this_frame.clear();
-        let relevant_keys: HashSet<Scancode> = self.m_input_mappings.relevant_keys();
-        for key in &relevant_keys {
+        for key in &self.m_relevant_keys {
             if keyboard_state.is_scancode_pressed(*key) {
                 self.m_pressed_keys_this_frame.insert(*key);
             }
@@ -210,25 +218,32 @@ impl InputMappings {
         Ok(Self { actions, axes })
     }
 
-    fn relevant_keys(&self) -> HashSet<Scancode> {
-        let mut relevant_keys: HashSet<Scancode> = HashSet::new();
+    fn relevant_keys(&self) -> Vec<Scancode> {
+        let mut keys_set: HashSet<Scancode> = HashSet::new();
+        let mut keys_vec: Vec<Scancode> = Vec::new();
         for pair in &self.actions {
             for key in pair.1 {
-                relevant_keys.insert(*key);
+                if keys_set.insert(*key) {
+                    keys_vec.push(*key);
+                }
             }
         }
 
         for pair in &self.axes {
             for key in &pair.1.positive {
-                relevant_keys.insert(*key);
+                if keys_set.insert(*key) {
+                    keys_vec.push(*key);
+                }
             }
 
             for key in &pair.1.negative {
-                relevant_keys.insert(*key);
+                if keys_set.insert(*key) {
+                    keys_vec.push(*key);
+                }
             }
         }
 
-        relevant_keys
+        keys_vec
     }
 }
 
