@@ -1,38 +1,110 @@
 use sdl2::keyboard::Scancode;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-fn get_input_settings_path() -> String {
-    String::from(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("config")
-            .join("input_settings.json")
-            .to_str()
-            .unwrap(),
-    )
+// Public
+#[derive(Debug, Clone)]
+pub enum InputEventType {
+    Pressed,
+    Released,
+    Axis,
 }
 
-pub fn get_input_mappings() -> InputMappings {
-    let input_settings_path: String = get_input_settings_path();
-    let input_config: InputConfig = InputConfig::from_file(&input_settings_path).unwrap();
-    let input_mappings: InputMappings = InputMappings::from_config(input_config).unwrap();
-    dbg!(&input_mappings);
+#[derive(Debug, Clone)]
+pub struct InputEvent {
+    pub ev_name: String,
+    pub ev_type: InputEventType,
+    pub axis_value: f32,
+}
 
-    return input_mappings;
+pub struct Input {
+    pub on_input_event: Vec<Box<dyn Fn(&InputEvent)>>,
+
+    m_input_mappings: InputMappings,
+    m_axis_values: HashMap<String, f32>,
+    m_pressed_keys_this_frame: HashSet<Scancode>,
+    m_pressed_keys_last_frame: HashSet<Scancode>,
+}
+
+impl Input {
+    pub fn new() -> Result<Self, String> {
+        let input_mappings: InputMappings = get_input_mappings()?;
+        let axis_values: HashMap<String, f32> = input_mappings
+            .axes
+            .keys()
+            .map(|k| (k.clone(), 0.0))
+            .collect();
+
+        Ok(Input {
+            on_input_event: Vec::new(),
+            m_input_mappings: input_mappings,
+            m_axis_values: axis_values,
+            m_pressed_keys_this_frame: HashSet::new(),
+            m_pressed_keys_last_frame: HashSet::new(),
+        })
+    }
+
+    pub fn tick(&mut self, delta_time: f32, keyboard_state: &sdl2::keyboard::KeyboardState) {
+        self.update_pressed_keys(keyboard_state);
+
+        // Dispatch action events
+        for (action, keys) in &self.m_input_mappings.actions {
+            for key in keys {
+                let pressed_now: bool = self.m_pressed_keys_this_frame.contains(key);
+                let pressed_before: bool = self.m_pressed_keys_last_frame.contains(key);
+
+                if pressed_now && !pressed_before {
+                    self.dispatch_event(InputEvent {
+                        ev_name: action.clone(),
+                        ev_type: InputEventType::Pressed,
+                        axis_value: 0.0,
+                    });
+                } else if pressed_before && !pressed_now {
+                    self.dispatch_event(InputEvent {
+                        ev_name: action.clone(),
+                        ev_type: InputEventType::Released,
+                        axis_value: 0.0,
+                    });
+                }
+            }
+        }
+    }
+
+    fn update_pressed_keys(&mut self, keyboard_state: &sdl2::keyboard::KeyboardState) {
+        self.m_pressed_keys_last_frame.clear();
+        for key in &self.m_pressed_keys_this_frame {
+            self.m_pressed_keys_last_frame.insert(*key);
+        }
+
+        self.m_pressed_keys_this_frame.clear();
+        let relevant_keys: HashSet<Scancode> = self.m_input_mappings.relevant_keys();
+        for key in &relevant_keys {
+            if keyboard_state.is_scancode_pressed(*key) {
+                self.m_pressed_keys_this_frame.insert(*key);
+            }
+        }
+    }
+
+    fn dispatch_event(&self, event: InputEvent) {
+        for handler in &self.on_input_event {
+            handler(&event);
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
 struct AxisConfig {
-    pub acceleration: f32,
-    pub deceleration: f32,
-    pub positive: Vec<String>,
-    pub negative: Vec<String>,
+    acceleration: f32,
+    deceleration: f32,
+    positive: Vec<String>,
+    negative: Vec<String>,
 }
 
+// Private
 #[derive(Debug, Deserialize)]
 struct InputConfig {
-    pub action_mappings: HashMap<String, Vec<String>>,
-    pub axis_mappings: HashMap<String, AxisConfig>,
+    action_mappings: HashMap<String, Vec<String>>,
+    axis_mappings: HashMap<String, AxisConfig>,
 }
 
 impl InputConfig {
@@ -44,17 +116,17 @@ impl InputConfig {
 }
 
 #[derive(Debug)]
-pub struct AxisMapping {
-    pub acceleration: f32,
-    pub deceleration: f32,
-    pub positive: Vec<Scancode>,
-    pub negative: Vec<Scancode>,
+struct AxisMapping {
+    acceleration: f32,
+    deceleration: f32,
+    positive: Vec<Scancode>,
+    negative: Vec<Scancode>,
 }
 
 #[derive(Debug)]
-pub struct InputMappings {
-    pub actions: HashMap<String, Vec<Scancode>>,
-    pub axes: HashMap<String, AxisMapping>,
+struct InputMappings {
+    actions: HashMap<String, Vec<Scancode>>,
+    axes: HashMap<String, AxisMapping>,
 }
 
 impl InputMappings {
@@ -80,14 +152,14 @@ impl InputMappings {
                 .positive
                 .iter()
                 .map(|k| Scancode::from_name(k).ok_or(k.clone()))
-                .collect::<Result<Vec<_>, _>>()
+                .collect::<Result<Vec<Scancode>, String>>()
                 .map_err(|k| format!("Unknown key: {}", k))?;
 
             let negative: Vec<Scancode> = cfg
                 .negative
                 .iter()
                 .map(|k| Scancode::from_name(k).ok_or(k.clone()))
-                .collect::<Result<Vec<_>, _>>()
+                .collect::<Result<Vec<Scancode>, String>>()
                 .map_err(|k| format!("Unknown key: {}", k))?;
 
             axes.insert(
@@ -103,4 +175,45 @@ impl InputMappings {
 
         Ok(Self { actions, axes })
     }
+
+    fn relevant_keys(&self) -> HashSet<Scancode> {
+        let mut relevant_keys: HashSet<Scancode> = HashSet::new();
+        for pair in &self.actions {
+            for key in pair.1 {
+                relevant_keys.insert(*key);
+            }
+        }
+
+        for pair in &self.axes {
+            for key in &pair.1.positive {
+                relevant_keys.insert(*key);
+            }
+
+            for key in &pair.1.negative {
+                relevant_keys.insert(*key);
+            }
+        }
+
+        relevant_keys
+    }
+}
+
+fn get_input_settings_path() -> String {
+    String::from(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("config")
+            .join("input_settings.json")
+            .to_str()
+            .unwrap(),
+    )
+}
+
+fn get_input_mappings() -> Result<InputMappings, String> {
+    let input_settings_path: String = get_input_settings_path();
+    let input_config: InputConfig = InputConfig::from_file(&input_settings_path)
+        .map_err(|err| format!("Failed to create InputConfig from file: {}", err))?;
+    let input_mappings: InputMappings = InputMappings::from_config(input_config)
+        .map_err(|err| format!("Failed to create InputMappings from config: {}", err))?;
+
+    Ok(input_mappings)
 }
