@@ -40,9 +40,7 @@ pub fn run() {
         }
 
         time.tick();
-
         let delta_time: f32 = time.get_delta_time();
-
         input.tick(delta_time, &event_pump.keyboard_state());
     }
 }
