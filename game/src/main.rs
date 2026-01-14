@@ -1,5 +1,12 @@
-use engine::game_loop;
+mod player;
+
+use engine::game_loop::Game;
 
 fn main() {
-    game_loop::run();
+    let mut game = Game::init();
+
+    let player = player::create_player();
+    game.spawn_entity(player);
+
+    game.run();
 }

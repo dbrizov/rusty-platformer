@@ -2,7 +2,7 @@ use crate::entity::Entity;
 use crate::math::Vec2;
 use std::any::Any;
 
-mod component_priority {
+pub mod component_priority {
     pub const INPUT: i32 = -150;
     pub const TRANSFORM: i32 = -100;
     pub const DEFAULT: i32 = 0;
@@ -104,11 +104,11 @@ impl Component for TransformComponent {
     fn priority(&self) -> i32 {
         component_priority::TRANSFORM
     }
-    
+
     fn base(&self) -> &ComponentBase {
         &self.m_base
     }
-    
+
     fn base_mut(&mut self) -> &mut ComponentBase {
         &mut self.m_base
     }
