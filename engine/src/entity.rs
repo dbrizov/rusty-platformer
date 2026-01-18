@@ -60,6 +60,10 @@ impl Entity {
         self.m_id
     }
 
+    pub fn set_id(&mut self, id: EntityId) {
+        self.m_id = id;
+    }
+
     pub fn is_in_play(&self) -> bool {
         self.m_is_in_play
     }
@@ -114,6 +118,7 @@ impl Entity {
 
 // Entity Spawner
 pub struct EntitySpawner {
+    m_next_entity_id: EntityId,
     m_entities: Vec<Box<Entity>>,
     m_entity_spawn_requests: Vec<Box<Entity>>,
     m_entity_destroy_requests: HashSet<EntityId>,
@@ -122,6 +127,7 @@ pub struct EntitySpawner {
 impl EntitySpawner {
     pub fn new() -> Self {
         Self {
+            m_next_entity_id: 0,
             m_entities: Vec::new(),
             m_entity_spawn_requests: Vec::new(),
             m_entity_destroy_requests: HashSet::new(),
@@ -147,6 +153,9 @@ impl EntitySpawner {
 
     fn resolve_entity_spawn_requests(&mut self) {
         for entity in &mut self.m_entity_spawn_requests {
+            entity.set_id(self.m_next_entity_id);
+            self.m_next_entity_id += 1;
+
             entity.enter_play();
         }
 

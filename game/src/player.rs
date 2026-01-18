@@ -35,6 +35,7 @@ impl Component for PlayerComponent {
 
     fn enter_play(&mut self) {
         println!("enter_play");
+        println!("player_id: {}", self.m_base.get_entity().id());
     }
 
     fn exit_play(&mut self) {
