@@ -90,7 +90,7 @@ impl Entity {
             comp.enter_play();
         }
 
-        comp.base_mut().set_entity_ptr(self as *mut Entity);
+        comp.set_entity_ptr(self as *mut Entity);
 
         self.m_components.push(comp);
         self.m_components

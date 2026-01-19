@@ -8,7 +8,7 @@ const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
 #[allow(dead_code)]
-pub struct Game {
+pub struct App {
     m_sdl: sdl2::Sdl,
     m_video: sdl2::VideoSubsystem,
     m_window: sdl2::video::Window,
@@ -18,7 +18,7 @@ pub struct Game {
     m_entity_spawner: entity::EntitySpawner,
 }
 
-impl Game {
+impl App {
     pub fn init() -> Self {
         let sdl: sdl2::Sdl = sdl2::init().unwrap();
         let video: sdl2::VideoSubsystem = sdl.video().unwrap();

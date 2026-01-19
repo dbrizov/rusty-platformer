@@ -1,5 +1,6 @@
 use crate::entity::Entity;
 use crate::math::Vec2;
+use engine_derive::ComponentBase;
 use std::any::Any;
 
 pub mod component_priority {
@@ -7,33 +8,6 @@ pub mod component_priority {
     pub const TRANSFORM: i32 = -100;
     pub const DEFAULT: i32 = 0;
     pub const RENDER: i32 = 100;
-}
-
-// Component base
-pub struct ComponentBase {
-    m_entity_ptr: *mut Entity,
-}
-
-impl ComponentBase {
-    pub fn new() -> Self {
-        Self {
-            m_entity_ptr: std::ptr::null_mut(),
-        }
-    }
-
-    pub fn set_entity_ptr(&mut self, entity: *mut Entity) {
-        self.m_entity_ptr = entity;
-    }
-
-    pub fn get_entity(&self) -> &Entity {
-        assert!(!self.m_entity_ptr.is_null());
-        unsafe { &*self.m_entity_ptr }
-    }
-
-    pub fn get_entity_mut(&self) -> &mut Entity {
-        assert!(!self.m_entity_ptr.is_null());
-        unsafe { &mut *self.m_entity_ptr }
-    }
 }
 
 // Component
@@ -55,24 +29,29 @@ where
     }
 }
 
-pub trait Component: AsAny {
+pub trait ComponentBase {
+    fn set_entity_ptr(&mut self, entity: *mut Entity);
+    fn get_entity(&self) -> &Entity;
+    fn get_entity_mut(&self) -> &mut Entity;
+}
+
+#[allow(unused_variables)]
+pub trait Component: ComponentBase + AsAny {
     fn priority(&self) -> i32 {
         component_priority::DEFAULT
     }
 
-    fn base(&self) -> &ComponentBase;
-    fn base_mut(&mut self) -> &mut ComponentBase;
-
     fn enter_play(&mut self) {}
     fn exit_play(&mut self) {}
-    fn tick(&mut self, _delta_time: f32) {}
-    fn physics_tick(&mut self, _fixed_delta_time: f32) {}
-    fn render_tick(&mut self, _delta_time: f32) {}
+    fn tick(&mut self, delta_time: f32) {}
+    fn physics_tick(&mut self, fixed_delta_time: f32) {}
+    fn render_tick(&mut self, delta_time: f32) {}
 }
 
 // TransformComponent
+#[derive(ComponentBase)]
 pub struct TransformComponent {
-    m_base: ComponentBase,
+    m_entity: *mut Entity,
     m_position: Vec2,
     m_prev_position: Vec2,
 }
@@ -80,7 +59,7 @@ pub struct TransformComponent {
 impl TransformComponent {
     pub fn new() -> Self {
         Self {
-            m_base: ComponentBase::new(),
+            m_entity: std::ptr::null_mut(),
             m_position: Vec2::zero(),
             m_prev_position: Vec2::zero(),
         }
@@ -103,13 +82,5 @@ impl TransformComponent {
 impl Component for TransformComponent {
     fn priority(&self) -> i32 {
         component_priority::TRANSFORM
-    }
-
-    fn base(&self) -> &ComponentBase {
-        &self.m_base
-    }
-
-    fn base_mut(&mut self) -> &mut ComponentBase {
-        &mut self.m_base
     }
 }
