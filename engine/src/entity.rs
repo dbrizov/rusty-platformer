@@ -93,8 +93,7 @@ impl Entity {
         comp.set_entity_ptr(self as *mut Entity);
 
         self.m_components.push(comp);
-        self.m_components
-            .sort_by_key(|c: &Box<dyn Component + 'static>| c.priority());
+        self.m_components.sort_by_key(|c| c.priority());
     }
 
     pub fn get_component<T>(&self) -> Option<&T>
@@ -112,7 +111,7 @@ impl Entity {
     {
         self.m_components
             .iter_mut()
-            .find_map(|c: &mut Box<dyn Component + 'static>| c.as_any_mut().downcast_mut::<T>())
+            .find_map(|c| c.as_any_mut().downcast_mut::<T>())
     }
 }
 
