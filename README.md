@@ -23,8 +23,6 @@ export LIBRARY_PATH="$LIBRARY_PATH:$HOMEBREW_PREFIX/lib"
 ```
 ### Windows
 The easiest way is to download the SDL2 libraries and dynamically link them.<br>
-You will also need to install `cmake`. You can install it via `windows-build-tools` or `Visual Studio Installer`.
-
 Here are links to the SDL2 libraries used in the project.
 - [SDL2-devel-2.32.10-VC](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10)
 - [SDL2_image-devel-2.8.8-VC](https://github.com/libsdl-org/SDL_image/releases/tag/release-2.8.8)
