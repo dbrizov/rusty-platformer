@@ -3,7 +3,7 @@ A hobby project with the sole purpose of learning the [Rust Programming Language
 
 # Requirements
 ## Rust
-The code is written using `rustc 1.92.0`, but any version above that will do the work.
+The code is written using `rustc 1.92.0`, but any version above that should work.
 
 ## SDL2.0 development libraries
 `SDL2 >= 2.0.26` is recommended to use the `rust-sdl2` bindings
