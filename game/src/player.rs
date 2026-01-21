@@ -1,11 +1,14 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use engine::components::{Component, ComponentBase, component_priority};
 use engine::engine_derive::ComponentBase;
-use engine::entity::Entity;
+use engine::entity::{Entity, EntityRef};
 
-pub fn create_player() -> Box<Entity> {
-    let mut player = Box::new(Entity::new());
+pub fn create_player() -> EntityRef {
+    let player = Rc::new(RefCell::new(Entity::new()));
     let player_comp = Box::new(PlayerComponent::new());
-    player.add_component(player_comp);
+    player.borrow_mut().add_component(player_comp);
     player
 }
 

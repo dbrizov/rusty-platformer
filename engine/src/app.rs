@@ -1,9 +1,9 @@
-use crate::entity;
-use crate::input;
-use crate::time;
+use crate::entity::{EntityId, EntityRef, EntitySpawner};
+use crate::input::Input;
+use crate::time::Time;
 
 const FPS: u32 = 60;
-const WINDOW_TITLE: &str = "SLD2 Window";
+const WINDOW_TITLE: &str = "Rusty Platform";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
@@ -13,9 +13,9 @@ pub struct App {
     m_video: sdl2::VideoSubsystem,
     m_window: sdl2::video::Window,
     m_event_pump: sdl2::EventPump,
-    m_time: time::Time,
-    m_input: input::Input,
-    m_entity_spawner: entity::EntitySpawner,
+    m_time: Time,
+    m_input: Input,
+    m_entity_spawner: EntitySpawner,
 }
 
 impl App {
@@ -28,9 +28,9 @@ impl App {
             .build()
             .unwrap();
         let event_pump: sdl2::EventPump = sdl.event_pump().unwrap();
-        let time: time::Time = time::Time::new(&sdl, FPS).unwrap();
-        let input: input::Input = input::Input::new().unwrap();
-        let entity_spawner: entity::EntitySpawner = entity::EntitySpawner::new();
+        let time: Time = Time::new(&sdl, FPS).unwrap();
+        let input: Input = Input::new().unwrap();
+        let entity_spawner: EntitySpawner = EntitySpawner::new();
 
         Self {
             m_sdl: sdl,
@@ -76,24 +76,24 @@ impl App {
             self.m_input
                 .tick(delta_time, &self.m_event_pump.keyboard_state());
 
-            for entity in self.m_entity_spawner.entity_iter_mut() {
+            for mut entity in self.m_entity_spawner.entity_iter_mut() {
                 entity.tick(scaled_delta_time);
             }
 
             // physics_tick()
 
             // render_tick()
-            for entity in self.m_entity_spawner.entity_iter_mut() {
+            for mut entity in self.m_entity_spawner.entity_iter_mut() {
                 entity.render_tick(scaled_delta_time);
             }
         }
     }
 
-    pub fn spawn_entity(&mut self, entity: Box<entity::Entity>) {
+    pub fn spawn_entity(&mut self, entity: EntityRef) {
         self.m_entity_spawner.spawn(entity);
     }
 
-    pub fn destroy_entity(&mut self, entity_id: entity::EntityId) {
+    pub fn destroy_entity(&mut self, entity_id: EntityId) {
         self.m_entity_spawner.destroy(entity_id);
     }
 }

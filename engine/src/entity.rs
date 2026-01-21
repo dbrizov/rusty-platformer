@@ -1,8 +1,12 @@
 use crate::components::{Component, TransformComponent};
+use std::cell::{RefCell, RefMut};
 use std::collections::HashSet;
 use std::mem;
+use std::rc::{Rc, Weak};
 
 pub type EntityId = u32;
+pub type EntityRef = Rc<RefCell<Entity>>;
+pub type EntityWeakRef = Weak<RefCell<Entity>>;
 
 pub struct Entity {
     m_id: EntityId,
@@ -118,8 +122,8 @@ impl Entity {
 // Entity Spawner
 pub struct EntitySpawner {
     m_next_entity_id: EntityId,
-    m_entities: Vec<Box<Entity>>,
-    m_entity_spawn_requests: Vec<Box<Entity>>,
+    m_entities: Vec<EntityRef>,
+    m_entity_spawn_requests: Vec<EntityRef>,
     m_entity_destroy_requests: HashSet<EntityId>,
 }
 
@@ -133,11 +137,11 @@ impl EntitySpawner {
         }
     }
 
-    pub fn entity_iter_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
-        self.m_entities.iter_mut().map(|e| e.as_mut())
+    pub fn entity_iter_mut<'a>(&'a self) -> impl Iterator<Item = RefMut<'a, Entity>> + 'a {
+        self.m_entities.iter().map(|e| e.borrow_mut())
     }
 
-    pub fn spawn(&mut self, entity: Box<Entity>) {
+    pub fn spawn(&mut self, entity: EntityRef) {
         self.m_entity_spawn_requests.push(entity);
     }
 
@@ -152,10 +156,10 @@ impl EntitySpawner {
 
     fn resolve_entity_spawn_requests(&mut self) {
         for entity in &mut self.m_entity_spawn_requests {
-            entity.set_id(self.m_next_entity_id);
+            entity.borrow_mut().set_id(self.m_next_entity_id);
             self.m_next_entity_id += 1;
 
-            entity.enter_play();
+            entity.borrow_mut().enter_play();
         }
 
         self.m_entities.append(&mut self.m_entity_spawn_requests);
@@ -164,12 +168,12 @@ impl EntitySpawner {
     fn resolve_entity_destroy_requests(&mut self) {
         let destroy_requests = mem::take(&mut self.m_entity_destroy_requests);
         for entity in self.m_entities.iter_mut() {
-            if destroy_requests.contains(&entity.id()) {
-                entity.exit_play();
+            if destroy_requests.contains(&entity.borrow().id()) {
+                entity.borrow_mut().exit_play();
             }
         }
 
         self.m_entities
-            .retain(|entity| !destroy_requests.contains(&entity.id()));
+            .retain(|entity| !destroy_requests.contains(&entity.borrow().id()));
     }
 }
