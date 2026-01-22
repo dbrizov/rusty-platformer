@@ -53,7 +53,6 @@ impl AssetDatabase {
     where
         P: AsRef<Path>,
     {
-        println!("{}", path.as_ref().display());
         let image = texture_creater.load_texture(path)?;
         Ok(image)
     }

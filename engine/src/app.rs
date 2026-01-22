@@ -82,7 +82,6 @@ impl App {
         let image_path = self
             .m_asset_db
             .asset_path(&["images", "entities", "player", "idle", "00.png"]);
-        println!("{}", image_path.to_str().unwrap());
         let image = self
             .m_asset_db
             .load_texture(&self.m_texture_creator, image_path)
