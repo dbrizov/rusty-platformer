@@ -35,7 +35,13 @@ impl AssetDatabase {
         I: IntoIterator<Item = P>,
         P: AsRef<Path>,
     {
-        let mut path = PathBuf::from(self.m_assets_root.as_ref().unwrap().clone());
+        let mut path = match &self.m_assets_root {
+            Some(root) => PathBuf::from(root.clone()),
+            None => {
+                panic!("Asset root is None");
+            }
+        };
+
         path.extend(parts);
 
         if !path.exists() {
