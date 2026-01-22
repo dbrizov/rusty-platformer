@@ -1,8 +1,9 @@
-use crate::components::{Component, TransformComponent};
-use std::cell::{RefCell, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::mem;
 use std::rc::{Rc, Weak};
+
+use crate::components::Component;
 
 pub type EntityId = u32;
 pub type EntityRef = Rc<RefCell<Entity>>;
@@ -16,16 +17,13 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn new() -> Self {
-        let mut entity: Entity = Self {
+    pub fn new_rc() -> EntityRef {
+        Rc::new(RefCell::new(Self {
             m_id: 0,
             m_components: Vec::new(),
             m_is_in_play: false,
             m_is_ticking: false,
-        };
-        // Always has TransformComponent
-        entity.add_component(Box::new(TransformComponent::new()));
-        entity
+        }))
     }
 
     pub fn enter_play(&mut self) {
@@ -80,12 +78,6 @@ impl Entity {
         self.m_is_ticking = is_ticking;
     }
 
-    pub fn get_transform(&mut self) -> &mut TransformComponent {
-        let transform: &mut TransformComponent =
-            self.get_component_mut::<TransformComponent>().unwrap();
-        transform
-    }
-
     pub fn add_component<T>(&mut self, mut comp: Box<T>)
     where
         T: Component + 'static,
@@ -94,7 +86,9 @@ impl Entity {
             comp.enter_play();
         }
 
-        comp.set_entity_ptr(self as *mut Entity);
+        unsafe {
+            comp.set_entity_ptr(self as *mut Entity);
+        }
 
         self.m_components.push(comp);
         self.m_components.sort_by_key(|c| c.priority());
@@ -137,6 +131,10 @@ impl EntitySpawner {
         }
     }
 
+    pub fn entity_iter<'a>(&'a self) -> impl Iterator<Item = Ref<'a, Entity>> + 'a {
+        self.m_entities.iter().map(|e| e.borrow())
+    }
+
     pub fn entity_iter_mut<'a>(&'a self) -> impl Iterator<Item = RefMut<'a, Entity>> + 'a {
         self.m_entities.iter().map(|e| e.borrow_mut())
     }
@@ -156,10 +154,11 @@ impl EntitySpawner {
 
     fn resolve_entity_spawn_requests(&mut self) {
         for entity in &mut self.m_entity_spawn_requests {
-            entity.borrow_mut().set_id(self.m_next_entity_id);
-            self.m_next_entity_id += 1;
+            let mut entity_ref = entity.borrow_mut();
+            entity_ref.set_id(self.m_next_entity_id);
+            entity_ref.enter_play();
 
-            entity.borrow_mut().enter_play();
+            self.m_next_entity_id += 1;
         }
 
         self.m_entities.append(&mut self.m_entity_spawn_requests);
@@ -168,8 +167,10 @@ impl EntitySpawner {
     fn resolve_entity_destroy_requests(&mut self) {
         let destroy_requests = mem::take(&mut self.m_entity_destroy_requests);
         for entity in self.m_entities.iter_mut() {
-            if destroy_requests.contains(&entity.borrow().id()) {
-                entity.borrow_mut().exit_play();
+            let mut entity_ref = entity.borrow_mut();
+            let entity_id = entity_ref.id();
+            if destroy_requests.contains(&entity_id) {
+                entity_ref.exit_play();
             }
         }
 

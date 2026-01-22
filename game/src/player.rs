@@ -1,15 +1,20 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use engine::components::{Component, ComponentBase, component_priority};
+use engine::components::{Component, ComponentBase, TransformComponent, component_priority};
 use engine::engine_derive::ComponentBase;
 use engine::entity::{Entity, EntityRef};
+use engine::math::Vec2;
 
 pub fn create_player() -> EntityRef {
-    let player = Rc::new(RefCell::new(Entity::new()));
-    let player_comp = Box::new(PlayerComponent::new());
-    player.borrow_mut().add_component(player_comp);
-    player
+    let entity = Entity::new_rc();
+    let transform_comp = TransformComponent::new_box();
+    let player_comp = PlayerComponent::new_box();
+
+    {
+        let mut entity_ref = entity.borrow_mut();
+        entity_ref.add_component(transform_comp);
+        entity_ref.add_component(player_comp);
+    }
+
+    entity
 }
 
 #[derive(ComponentBase)]
@@ -18,10 +23,10 @@ pub struct PlayerComponent {
 }
 
 impl PlayerComponent {
-    pub fn new() -> Self {
-        Self {
+    pub fn new_box() -> Box<Self> {
+        Box::new(Self {
             m_entity: std::ptr::null_mut(),
-        }
+        })
     }
 }
 
@@ -32,11 +37,13 @@ impl Component for PlayerComponent {
 
     fn enter_play(&mut self) {
         println!("enter_play");
-        println!("player_id: {}", self.get_entity().id());
-    }
-
-    fn exit_play(&mut self) {
-        println!("exit_play");
-        println!("player_id: {}", self.get_entity().id());
+        if let Some(trans) = self
+            .get_entity_mut()
+            .get_component_mut::<TransformComponent>()
+        {
+            let id = self.get_entity().id() as f32;
+            trans.set_position(Vec2::from_xy(id, id));
+            println!("{:?}", trans.get_position())
+        }
     }
 }

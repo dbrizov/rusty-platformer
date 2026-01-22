@@ -1,7 +1,8 @@
+use std::any::Any;
+
 use crate::entity::Entity;
 use crate::math::Vec2;
 use engine_derive::ComponentBase;
-use std::any::Any;
 
 pub mod component_priority {
     pub const INPUT: i32 = -150;
@@ -30,7 +31,7 @@ where
 }
 
 pub trait ComponentBase {
-    fn set_entity_ptr(&mut self, entity: *mut Entity);
+    unsafe fn set_entity_ptr(&mut self, entity: *mut Entity);
     fn get_entity(&self) -> &Entity;
     fn get_entity_mut(&self) -> &mut Entity;
 }
@@ -57,12 +58,12 @@ pub struct TransformComponent {
 }
 
 impl TransformComponent {
-    pub fn new() -> Self {
-        Self {
+    pub fn new_box() -> Box<Self> {
+        Box::new(Self {
             m_entity: std::ptr::null_mut(),
             m_position: Vec2::zero(),
             m_prev_position: Vec2::zero(),
-        }
+        })
     }
 
     pub fn get_position(&self) -> Vec2 {

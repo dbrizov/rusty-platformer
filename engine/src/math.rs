@@ -9,6 +9,34 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
+    pub fn from_xy(x: f32, y: f32) -> Self {
+        Self { x, y }
+    }
+
+    pub fn zero() -> Self {
+        Self { x: 0.0, y: 0.0 }
+    }
+
+    pub fn one() -> Self {
+        Self { x: 1.0, y: 1.0 }
+    }
+
+    pub fn left() -> Self {
+        Self { x: -1.0, y: 0.0 }
+    }
+
+    pub fn right() -> Self {
+        Self { x: 1.0, y: 0.0 }
+    }
+
+    pub fn up() -> Self {
+        Self { x: 0.0, y: -1.0 }
+    }
+
+    pub fn down() -> Self {
+        Self { x: 0.0, y: 1.0 }
+    }
+
     pub fn len(&self) -> f32 {
         (self.x * self.x + self.y * self.y).sqrt()
     }
@@ -20,41 +48,14 @@ impl Vec2 {
     pub fn normalized(&self) -> Vec2 {
         let len: f32 = self.len();
         if len < EPSILON {
-            Vec2 { x: 0.0, y: 0.0 }
+            Vec2::zero()
         } else {
-            Vec2 {
-                x: self.x / len,
-                y: self.y / len,
-            }
+            Vec2::from_xy(self.x / len, self.y / len)
         }
     }
 
     pub fn dot(a: Vec2, b: Vec2) -> f32 {
         a.x * b.x + a.y * b.y
-    }
-
-    pub fn zero() -> Vec2 {
-        Vec2 { x: 0.0, y: 0.0 }
-    }
-
-    pub fn one() -> Vec2 {
-        Vec2 { x: 1.0, y: 1.0 }
-    }
-
-    pub fn left() -> Vec2 {
-        Vec2 { x: -1.0, y: 0.0 }
-    }
-
-    pub fn right() -> Vec2 {
-        Vec2 { x: 1.0, y: 0.0 }
-    }
-
-    pub fn up() -> Vec2 {
-        Vec2 { x: 0.0, y: -1.0 }
-    }
-
-    pub fn down() -> Vec2 {
-        Vec2 { x: 0.0, y: 1.0 }
     }
 }
 
