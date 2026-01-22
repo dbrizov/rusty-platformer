@@ -36,7 +36,6 @@ impl Component for PlayerComponent {
     }
 
     fn enter_play(&mut self) {
-        println!("enter_play");
         if let Some(trans) = self
             .get_entity_mut()
             .get_component_mut::<TransformComponent>()
