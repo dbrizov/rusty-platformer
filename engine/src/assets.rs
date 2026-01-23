@@ -3,16 +3,26 @@ use sdl2::{
     render::{Texture, TextureCreator},
     video::WindowContext,
 };
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
 
-pub struct AssetDatabase {
+pub type TextureId = u32;
+
+pub struct Assets<'a> {
     m_assets_root: Option<String>,
+    m_textures: HashMap<TextureId, Rc<Texture<'a>>>,
+    m_next_texture_id: TextureId,
 }
 
-impl AssetDatabase {
+impl<'a> Assets<'a> {
     pub fn new() -> Self {
         Self {
             m_assets_root: None,
+            m_textures: HashMap::new(),
+            m_next_texture_id: 0,
         }
     }
 
@@ -51,15 +61,21 @@ impl AssetDatabase {
         path
     }
 
-    pub fn load_texture<'a, P>(
-        &self,
-        texture_creater: &'a TextureCreator<WindowContext>,
+    pub fn load_texture<P>(
+        &mut self,
+        texture_creator: &'a TextureCreator<WindowContext>,
         path: P,
-    ) -> Result<Texture<'a>, String>
+    ) -> Result<Rc<Texture<'a>>, String>
     where
         P: AsRef<Path>,
     {
-        let image = texture_creater.load_texture(path)?;
-        Ok(image)
+        let texture = texture_creator.load_texture(path)?;
+        let texture_rc = Rc::new(texture);
+
+        self.m_textures
+            .insert(self.m_next_texture_id, texture_rc.clone());
+        self.m_next_texture_id += 1;
+
+        Ok(texture_rc)
     }
 }

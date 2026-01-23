@@ -1,13 +1,15 @@
 use sdl2::event::Event;
-use sdl2::image::{InitFlag, Sdl2ImageContext};
+use sdl2::image::{InitFlag, LoadTexture, Sdl2ImageContext};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render::{Canvas, TextureCreator};
+use sdl2::render::{Canvas, Texture, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
+use std::collections::HashMap;
 use std::path::Path;
+use std::rc::Rc;
 
-use crate::assets::AssetDatabase;
+use crate::assets::{Assets, TextureId};
 use crate::entity::{EntityId, EntityRef, EntitySpawner};
 use crate::input::Input;
 use crate::time::Time;
@@ -17,17 +19,23 @@ const WINDOW_TITLE: &str = "Rusty Platform";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
-pub struct App {
+struct Sdl2Config {
     _m_sdl2: Sdl,
     _m_sdl2_image: Sdl2ImageContext,
 
     m_canvas: Canvas<Window>,
     m_texture_creator: TextureCreator<WindowContext>,
     m_event_pump: EventPump,
-    m_asset_db: AssetDatabase,
+}
+
+pub struct App {
+    m_asset_db: Assets,
     m_time: Time,
     m_input: Input,
     m_entity_spawner: EntitySpawner,
+
+    m_textures: HashMap<TextureId, Rc<Texture<'static>>>,
+    m_next_texture_id: TextureId,
 }
 
 impl App {
@@ -44,7 +52,7 @@ impl App {
         let canvas = window.into_canvas().accelerated().build().unwrap();
         let texture_creator = canvas.texture_creator();
         let event_pump = sdl2.event_pump().unwrap();
-        let asset_db = AssetDatabase::new();
+        let asset_db = Assets::new();
         let time = Time::new(&sdl2, FPS).unwrap();
         let input = Input::new().unwrap();
         let entity_spawner = EntitySpawner::new();
@@ -59,6 +67,8 @@ impl App {
             m_time: time,
             m_input: input,
             m_entity_spawner: entity_spawner,
+            m_textures: HashMap::new(),
+            m_next_texture_id: 0,
         }
     }
 
