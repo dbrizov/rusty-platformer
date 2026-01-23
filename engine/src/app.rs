@@ -1,15 +1,13 @@
 use sdl2::event::Event;
-use sdl2::image::{InitFlag, LoadTexture, Sdl2ImageContext};
+use sdl2::image::{InitFlag, Sdl2ImageContext};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render::{Canvas, Texture, TextureCreator};
+use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
-use std::collections::HashMap;
 use std::path::Path;
-use std::rc::Rc;
 
-use crate::assets::{Assets, TextureId};
+use crate::assets::Assets;
 use crate::entity::{EntityId, EntityRef, EntitySpawner};
 use crate::input::Input;
 use crate::time::Time;
@@ -19,27 +17,19 @@ const WINDOW_TITLE: &str = "Rusty Platform";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
-struct Sdl2Config {
+pub struct Sdl2Instance {
     _m_sdl2: Sdl,
     _m_sdl2_image: Sdl2ImageContext,
 
     m_canvas: Canvas<Window>,
     m_texture_creator: TextureCreator<WindowContext>,
     m_event_pump: EventPump,
-}
-
-pub struct App {
-    m_asset_db: Assets,
     m_time: Time,
     m_input: Input,
-    m_entity_spawner: EntitySpawner,
-
-    m_textures: HashMap<TextureId, Rc<Texture<'static>>>,
-    m_next_texture_id: TextureId,
 }
 
-impl App {
-    pub fn init() -> Self {
+impl Sdl2Instance {
+    pub fn new() -> Self {
         let sdl2 = sdl2::init().unwrap();
         let sdl2_image = sdl2::image::init(InitFlag::PNG).unwrap();
 
@@ -52,10 +42,8 @@ impl App {
         let canvas = window.into_canvas().accelerated().build().unwrap();
         let texture_creator = canvas.texture_creator();
         let event_pump = sdl2.event_pump().unwrap();
-        let asset_db = Assets::new();
         let time = Time::new(&sdl2, FPS).unwrap();
         let input = Input::new().unwrap();
-        let entity_spawner = EntitySpawner::new();
 
         Self {
             _m_sdl2: sdl2,
@@ -63,12 +51,22 @@ impl App {
             m_canvas: canvas,
             m_texture_creator: texture_creator,
             m_event_pump: event_pump,
-            m_asset_db: asset_db,
             m_time: time,
             m_input: input,
-            m_entity_spawner: entity_spawner,
-            m_textures: HashMap::new(),
-            m_next_texture_id: 0,
+        }
+    }
+}
+
+pub struct App<'a> {
+    m_assets: Assets<'a>,
+    m_entity_spawner: EntitySpawner,
+}
+
+impl<'a> App<'a> {
+    pub fn new() -> Self {
+        Self {
+            m_assets: Assets::new(),
+            m_entity_spawner: EntitySpawner::new(),
         }
     }
 
@@ -76,29 +74,30 @@ impl App {
     where
         P: AsRef<Path>,
     {
-        self.m_asset_db.set_assets_root(assets_root);
+        self.m_assets.set_assets_root(assets_root);
     }
 
-    pub fn run(&mut self) {
-        self.m_input.on_input_event.push(Box::new(|event| {
+    pub fn run(&mut self, sdl2: &'a mut Sdl2Instance) {
+        sdl2.m_input.on_input_event.push(Box::new(|event| {
             println!("Event: {:?}", event);
         }));
 
         let mut events: Vec<Event> = Vec::new();
 
         // Debug render
-        self.m_canvas.set_draw_color(Color::RGB(14, 219, 248));
+        sdl2.m_canvas.set_draw_color(Color::RGB(14, 219, 248));
         let image_path = self
-            .m_asset_db
+            .m_assets
             .asset_path(&["images", "entities", "player", "idle", "00.png"]);
-        let image = self
-            .m_asset_db
-            .load_texture(&self.m_texture_creator, image_path)
+        let image_id = self
+            .m_assets
+            .load_texture(&sdl2.m_texture_creator, image_path)
             .unwrap();
+        let image_texture = self.m_assets.get_texture(image_id).unwrap();
 
         'running: loop {
             events.clear();
-            for event in self.m_event_pump.poll_iter() {
+            for event in sdl2.m_event_pump.poll_iter() {
                 events.push(event);
             }
 
@@ -111,16 +110,16 @@ impl App {
                 }
             }
 
-            self.m_time.tick();
+            sdl2.m_time.tick();
 
             self.m_entity_spawner.resolve();
 
-            let delta_time: f32 = self.m_time.get_delta_time();
-            let scaled_delta_time: f32 = delta_time * self.m_time.get_time_scale();
+            let delta_time: f32 = sdl2.m_time.get_delta_time();
+            let scaled_delta_time: f32 = delta_time * sdl2.m_time.get_time_scale();
 
             // tick()
-            self.m_input
-                .tick(delta_time, &self.m_event_pump.keyboard_state());
+            sdl2.m_input
+                .tick(delta_time, &sdl2.m_event_pump.keyboard_state());
 
             for mut entity in self.m_entity_spawner.entity_iter_mut() {
                 entity.tick(scaled_delta_time);
@@ -129,11 +128,11 @@ impl App {
             // physics_tick()
 
             // render_tick()
-            self.m_canvas.clear();
+            sdl2.m_canvas.clear();
 
-            let query = image.query();
+            let query = image_texture.query();
             let dst = Rect::new(50, 50, query.width * 2, query.height * 2);
-            if let Err(err) = self.m_canvas.copy(&image, None, dst) {
+            if let Err(err) = sdl2.m_canvas.copy(&image_texture, None, dst) {
                 eprintln!("Render error: {}", err);
             }
 
@@ -141,7 +140,7 @@ impl App {
                 entity.render_tick(scaled_delta_time);
             }
 
-            self.m_canvas.present();
+            sdl2.m_canvas.present();
         }
     }
 

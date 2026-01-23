@@ -65,17 +65,19 @@ impl<'a> Assets<'a> {
         &mut self,
         texture_creator: &'a TextureCreator<WindowContext>,
         path: P,
-    ) -> Result<Rc<Texture<'a>>, String>
+    ) -> Result<TextureId, String>
     where
         P: AsRef<Path>,
     {
         let texture = texture_creator.load_texture(path)?;
-        let texture_rc = Rc::new(texture);
-
-        self.m_textures
-            .insert(self.m_next_texture_id, texture_rc.clone());
+        let texture_id = self.m_next_texture_id;
+        self.m_textures.insert(texture_id, Rc::new(texture));
         self.m_next_texture_id += 1;
 
-        Ok(texture_rc)
+        Ok(texture_id)
+    }
+
+    pub fn get_texture(&self, id: TextureId) -> Option<Rc<Texture<'a>>> {
+        self.m_textures.get(&id).map(Rc::clone)
     }
 }
