@@ -4,7 +4,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
-use sdl2::{EventPump, Sdl, VideoSubsystem};
+use sdl2::{EventPump, Sdl};
 use std::path::Path;
 
 use crate::assets::AssetDatabase;
@@ -17,13 +17,12 @@ const WINDOW_TITLE: &str = "Rusty Platform";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
-#[allow(dead_code)]
 pub struct App {
-    m_sdl: Sdl,
-    m_video: VideoSubsystem,
+    _m_sdl2: Sdl,
+    _m_sdl2_image: Sdl2ImageContext,
+
     m_canvas: Canvas<Window>,
     m_texture_creator: TextureCreator<WindowContext>,
-    m_image_context: Sdl2ImageContext,
     m_event_pump: EventPump,
     m_asset_db: AssetDatabase,
     m_time: Time,
@@ -33,28 +32,28 @@ pub struct App {
 
 impl App {
     pub fn init() -> Self {
-        let sdl = sdl2::init().unwrap();
-        let video = sdl.video().unwrap();
+        let sdl2 = sdl2::init().unwrap();
+        let sdl2_image = sdl2::image::init(InitFlag::PNG).unwrap();
+
+        let video = sdl2.video().unwrap();
         let window = video
             .window(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT)
             .position_centered()
             .build()
             .unwrap();
         let canvas = window.into_canvas().accelerated().build().unwrap();
-        let texture_creator: TextureCreator<WindowContext> = canvas.texture_creator();
-        let image_context: Sdl2ImageContext = sdl2::image::init(InitFlag::PNG).unwrap();
-        let event_pump = sdl.event_pump().unwrap();
+        let texture_creator = canvas.texture_creator();
+        let event_pump = sdl2.event_pump().unwrap();
         let asset_db = AssetDatabase::new();
-        let time = Time::new(&sdl, FPS).unwrap();
+        let time = Time::new(&sdl2, FPS).unwrap();
         let input = Input::new().unwrap();
         let entity_spawner = EntitySpawner::new();
 
         Self {
-            m_sdl: sdl,
-            m_video: video,
+            _m_sdl2: sdl2,
+            _m_sdl2_image: sdl2_image,
             m_canvas: canvas,
             m_texture_creator: texture_creator,
-            m_image_context: image_context,
             m_event_pump: event_pump,
             m_asset_db: asset_db,
             m_time: time,
