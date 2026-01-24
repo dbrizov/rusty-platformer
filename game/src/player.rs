@@ -4,7 +4,6 @@ use engine::components::{
 };
 use engine::engine_derive::ComponentBase;
 use engine::entity::{Entity, EntityRef};
-use engine::math::Vec2;
 
 pub fn create_player(assets: &mut Assets) -> EntityRef {
     let entity = Entity::new_rc();
@@ -41,16 +40,5 @@ impl PlayerComponent {
 impl Component for PlayerComponent {
     fn priority(&self) -> i32 {
         component_priority::DEFAULT
-    }
-
-    fn enter_play(&mut self) {
-        if let Some(trans) = self
-            .get_entity_mut()
-            .get_component_mut::<TransformComponent>()
-        {
-            let id = self.get_entity().id() as f32;
-            trans.set_position(Vec2::from_xy(id, id));
-            println!("{:?}", trans.get_position())
-        }
     }
 }
