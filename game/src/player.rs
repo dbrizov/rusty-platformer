@@ -1,17 +1,25 @@
-use engine::components::{Component, ComponentBase, TransformComponent, component_priority};
+use engine::assets::Assets;
+use engine::components::{
+    Component, ComponentBase, ImageComponent, TransformComponent, component_priority,
+};
 use engine::engine_derive::ComponentBase;
 use engine::entity::{Entity, EntityRef};
 use engine::math::Vec2;
 
-pub fn create_player() -> EntityRef {
+pub fn create_player(assets: &mut Assets) -> EntityRef {
     let entity = Entity::new_rc();
     let transform_comp = TransformComponent::new_box();
     let player_comp = PlayerComponent::new_box();
+
+    let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
+    let image_id = assets.load_texture(image_path).unwrap();
+    let image_comp = ImageComponent::new_box(image_id);
 
     {
         let mut entity_ref = entity.borrow_mut();
         entity_ref.add_component(transform_comp);
         entity_ref.add_component(player_comp);
+        entity_ref.add_component(image_comp);
     }
 
     entity

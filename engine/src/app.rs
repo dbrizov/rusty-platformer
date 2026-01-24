@@ -1,7 +1,6 @@
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, Sdl2ImageContext};
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
@@ -16,18 +15,17 @@ const WINDOW_TITLE: &str = "Rusty Platform";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 
-pub struct Sdl2Instance {
+pub struct Sdl2Context {
     _m_sdl2: Sdl,
     _m_sdl2_image: Sdl2ImageContext,
 
     m_canvas: Canvas<Window>,
-    m_texture_creator: TextureCreator<WindowContext>,
     m_event_pump: EventPump,
     m_time: Time,
     m_input: Input,
 }
 
-impl Sdl2Instance {
+impl Sdl2Context {
     pub fn new() -> Self {
         let sdl2 = sdl2::init().unwrap();
         let sdl2_image = sdl2::image::init(InitFlag::PNG).unwrap();
@@ -39,7 +37,6 @@ impl Sdl2Instance {
             .build()
             .unwrap();
         let canvas = window.into_canvas().accelerated().build().unwrap();
-        let texture_creator = canvas.texture_creator();
         let event_pump = sdl2.event_pump().unwrap();
         let time = Time::new(&sdl2, FPS).unwrap();
         let input = Input::new().unwrap();
@@ -48,11 +45,14 @@ impl Sdl2Instance {
             _m_sdl2: sdl2,
             _m_sdl2_image: sdl2_image,
             m_canvas: canvas,
-            m_texture_creator: texture_creator,
             m_event_pump: event_pump,
             m_time: time,
             m_input: input,
         }
+    }
+
+    pub fn texture_creator(&self) -> TextureCreator<WindowContext> {
+        self.m_canvas.texture_creator()
     }
 }
 
@@ -67,7 +67,7 @@ impl App {
         }
     }
 
-    pub fn run<'a>(&mut self, sdl2: &'a mut Sdl2Instance, assets: &mut Assets<'a>) {
+    pub fn run(&mut self, sdl2: &mut Sdl2Context, assets: &mut Assets) {
         sdl2.m_input.on_input_event.push(Box::new(|event| {
             println!("Event: {:?}", event);
         }));
@@ -76,11 +76,6 @@ impl App {
 
         // Debug render
         sdl2.m_canvas.set_draw_color(Color::RGB(14, 219, 248));
-        let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
-        let image_id = assets
-            .load_texture(&sdl2.m_texture_creator, image_path)
-            .unwrap();
-        let image_texture = assets.get_texture(image_id).unwrap();
 
         'running: loop {
             events.clear();
@@ -113,18 +108,13 @@ impl App {
             }
 
             // physics_tick()
+            // TODO
 
             // render_tick()
             sdl2.m_canvas.clear();
 
-            let query = image_texture.query();
-            let dst = Rect::new(50, 50, query.width * 2, query.height * 2);
-            if let Err(err) = sdl2.m_canvas.copy(&image_texture, None, dst) {
-                eprintln!("Render error: {}", err);
-            }
-
             for mut entity in self.m_entity_spawner.entity_iter_mut() {
-                entity.render_tick(scaled_delta_time);
+                entity.render_tick(scaled_delta_time, &mut sdl2.m_canvas, assets);
             }
 
             sdl2.m_canvas.present();

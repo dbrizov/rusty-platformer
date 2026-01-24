@@ -1,8 +1,12 @@
-use std::any::Any;
-
+use crate::assets::Assets;
+use crate::assets::TextureId;
 use crate::entity::Entity;
 use crate::math::Vec2;
 use engine_derive::ComponentBase;
+use sdl2::rect::Rect;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
+use std::any::Any;
 
 pub mod component_priority {
     pub const INPUT: i32 = -150;
@@ -44,12 +48,12 @@ pub trait Component: ComponentBase + AsAny {
 
     fn enter_play(&mut self) {}
     fn exit_play(&mut self) {}
-    fn tick(&mut self, delta_time: f32) {}
-    fn physics_tick(&mut self, fixed_delta_time: f32) {}
-    fn render_tick(&mut self, delta_time: f32) {}
+    fn tick(&mut self, _delta_time: f32) {}
+    fn physics_tick(&mut self, _fixed_delta_time: f32) {}
+    fn render_tick(&mut self, _delta_time: f32, canvas: &mut Canvas<Window>, assets: &Assets) {}
 }
 
-// TransformComponent
+// Transform Component
 #[derive(ComponentBase)]
 pub struct TransformComponent {
     m_entity: *mut Entity,
@@ -83,5 +87,59 @@ impl TransformComponent {
 impl Component for TransformComponent {
     fn priority(&self) -> i32 {
         component_priority::TRANSFORM
+    }
+}
+
+// Image Component
+#[derive(ComponentBase)]
+pub struct ImageComponent {
+    m_entity: *mut Entity,
+    m_texture_id: TextureId,
+}
+
+impl ImageComponent {
+    pub fn new_box(texture_id: TextureId) -> Box<Self> {
+        Box::new(Self {
+            m_entity: std::ptr::null_mut(),
+            m_texture_id: texture_id,
+        })
+    }
+
+    pub fn get_texture_id(&self) -> TextureId {
+        self.m_texture_id
+    }
+
+    pub fn set_texture_id(&mut self, id: TextureId) {
+        self.m_texture_id = id;
+    }
+}
+
+impl Component for ImageComponent {
+    fn priority(&self) -> i32 {
+        component_priority::RENDER
+    }
+
+    fn render_tick(&mut self, _delta_time: f32, canvas: &mut Canvas<Window>, assets: &Assets) {
+        if let Some(texture) = assets.get_texture(self.m_texture_id) {
+            let transform = self
+                .get_entity()
+                .get_component::<TransformComponent>()
+                .unwrap();
+            let pos = transform.get_position();
+
+            let query = texture.query();
+            let dst = Rect::new(
+                pos.x as i32,
+                pos.y as i32,
+                query.width * 2,
+                query.height * 2,
+            );
+
+            if let Err(err) = canvas.copy(texture, None, dst) {
+                eprintln!("Render error: {}", err);
+            }
+        } else {
+            eprintln!("Texture with 'texture_id={}' not found", self.m_texture_id);
+        }
     }
 }
