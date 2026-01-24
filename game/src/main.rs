@@ -1,17 +1,20 @@
 mod player;
 
-use engine::app::{App, Sdl2Instance};
+use engine::{
+    app::{App, Sdl2Instance},
+    assets::Assets,
+};
 use std::path::PathBuf;
 
 fn main() {
     let mut sdl2 = Sdl2Instance::new();
+    let mut assets = Assets::new(get_assets_root());
 
     let mut app = App::new();
-    app.set_assets_root(get_assets_root());
 
     app.spawn_entity(player::create_player());
 
-    app.run(&mut sdl2);
+    app.run(&mut sdl2, &mut assets);
 }
 
 fn get_assets_root() -> PathBuf {

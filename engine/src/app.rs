@@ -5,7 +5,6 @@ use sdl2::rect::Rect;
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
-use std::path::Path;
 
 use crate::assets::Assets;
 use crate::entity::{EntityId, EntityRef, EntitySpawner};
@@ -57,27 +56,18 @@ impl Sdl2Instance {
     }
 }
 
-pub struct App<'a> {
-    m_assets: Assets<'a>,
+pub struct App {
     m_entity_spawner: EntitySpawner,
 }
 
-impl<'a> App<'a> {
+impl App {
     pub fn new() -> Self {
         Self {
-            m_assets: Assets::new(),
             m_entity_spawner: EntitySpawner::new(),
         }
     }
 
-    pub fn set_assets_root<P>(&mut self, assets_root: P)
-    where
-        P: AsRef<Path>,
-    {
-        self.m_assets.set_assets_root(assets_root);
-    }
-
-    pub fn run(&mut self, sdl2: &'a mut Sdl2Instance) {
+    pub fn run<'a>(&mut self, sdl2: &'a mut Sdl2Instance, assets: &mut Assets<'a>) {
         sdl2.m_input.on_input_event.push(Box::new(|event| {
             println!("Event: {:?}", event);
         }));
@@ -86,14 +76,11 @@ impl<'a> App<'a> {
 
         // Debug render
         sdl2.m_canvas.set_draw_color(Color::RGB(14, 219, 248));
-        let image_path = self
-            .m_assets
-            .asset_path(&["images", "entities", "player", "idle", "00.png"]);
-        let image_id = self
-            .m_assets
+        let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
+        let image_id = assets
             .load_texture(&sdl2.m_texture_creator, image_path)
             .unwrap();
-        let image_texture = self.m_assets.get_texture(image_id).unwrap();
+        let image_texture = assets.get_texture(image_id).unwrap();
 
         'running: loop {
             events.clear();
