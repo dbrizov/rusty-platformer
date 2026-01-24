@@ -6,14 +6,13 @@ use sdl2::{
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    rc::Rc,
 };
 
 pub type TextureId = u32;
 
 pub struct Assets<'a> {
     m_assets_root: String,
-    m_textures: HashMap<TextureId, Rc<Texture<'a>>>,
+    m_textures: HashMap<TextureId, Box<Texture<'a>>>,
     m_next_texture_id: TextureId,
 }
 
@@ -54,13 +53,13 @@ impl<'a> Assets<'a> {
     {
         let texture = texture_creator.load_texture(path)?;
         let texture_id = self.m_next_texture_id;
-        self.m_textures.insert(texture_id, Rc::new(texture));
+        self.m_textures.insert(texture_id, Box::new(texture));
         self.m_next_texture_id += 1;
 
         Ok(texture_id)
     }
 
-    pub fn get_texture(&self, id: TextureId) -> Option<Rc<Texture<'a>>> {
-        self.m_textures.get(&id).map(Rc::clone)
+    pub fn get_texture(&self, id: TextureId) -> Option<&Texture<'a>> {
+        self.m_textures.get(&id).map(Box::as_ref)
     }
 }
