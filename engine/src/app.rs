@@ -25,6 +25,7 @@ pub struct Sdl2Context {
     _m_sdl2_image: Sdl2ImageContext,
 
     m_canvas: Canvas<Window>,
+    m_texture_creator: Rc<TextureCreator<WindowContext>>,
     m_event_pump: EventPump,
     m_time: Time,
     m_input: Rc<RefCell<Input>>,
@@ -42,6 +43,7 @@ impl Sdl2Context {
             .build()
             .unwrap();
         let canvas = window.into_canvas().accelerated().build().unwrap();
+        let texture_creator = Rc::new(canvas.texture_creator());
         let event_pump = sdl2.event_pump().unwrap();
         let time = Time::new(&sdl2, FPS).unwrap();
         let input = Rc::new(RefCell::new(Input::new().unwrap()));
@@ -50,14 +52,15 @@ impl Sdl2Context {
             _m_sdl2: sdl2,
             _m_sdl2_image: sdl2_image,
             m_canvas: canvas,
+            m_texture_creator: texture_creator,
             m_event_pump: event_pump,
             m_time: time,
             m_input: input,
         }
     }
 
-    pub fn get_texture_creator(&self) -> TextureCreator<WindowContext> {
-        self.m_canvas.texture_creator()
+    pub fn get_texture_creator(&self) -> Rc<TextureCreator<WindowContext>> {
+        self.m_texture_creator.clone()
     }
 
     pub fn get_input(&self) -> Rc<RefCell<Input>> {

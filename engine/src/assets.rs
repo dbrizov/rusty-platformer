@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use sdl2::image::LoadTexture;
 use sdl2::render::{Texture, TextureCreator};
@@ -9,13 +10,13 @@ pub type TextureId = u32;
 
 pub struct Assets {
     m_assets_root: String,
-    m_texture_creator: TextureCreator<WindowContext>,
+    m_texture_creator: Rc<TextureCreator<WindowContext>>,
     m_textures: HashMap<TextureId, Texture<'static>>,
     m_next_texture_id: TextureId,
 }
 
 impl Assets {
-    pub fn new<P>(assets_root: P, texture_creator: TextureCreator<WindowContext>) -> Self
+    pub fn new<P>(assets_root: P, texture_creator: Rc<TextureCreator<WindowContext>>) -> Self
     where
         P: AsRef<Path>,
     {
