@@ -1,5 +1,6 @@
-use crate::{assets::TextureId, math::Vec2};
 use std::collections::{VecDeque, vec_deque::Drain};
+
+use crate::{assets::TextureId, math::Vec2};
 
 pub struct RenderStruct {
     pub texture_id: TextureId,

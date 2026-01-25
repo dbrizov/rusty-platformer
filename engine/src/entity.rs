@@ -1,9 +1,10 @@
-use crate::components::Component;
-use crate::render::RenderQueue;
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::mem;
 use std::rc::{Rc, Weak};
+
+use crate::components::Component;
+use crate::render::RenderQueue;
 
 pub type EntityId = u32;
 pub type EntityRef = Rc<RefCell<Entity>>;

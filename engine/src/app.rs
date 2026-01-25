@@ -1,8 +1,6 @@
-use crate::assets::Assets;
-use crate::entity::{EntityId, EntityRef, EntitySpawner};
-use crate::input::Input;
-use crate::render::RenderQueue;
-use crate::time::Time;
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, Sdl2ImageContext};
 use sdl2::pixels::Color;
@@ -10,6 +8,12 @@ use sdl2::rect::Rect;
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
+
+use crate::assets::Assets;
+use crate::entity::{EntityId, EntityRef, EntitySpawner};
+use crate::input::Input;
+use crate::render::RenderQueue;
+use crate::time::Time;
 
 const FPS: u32 = 60;
 const WINDOW_TITLE: &str = "Rusty Platformer";
@@ -23,7 +27,7 @@ pub struct Sdl2Context {
     m_canvas: Canvas<Window>,
     m_event_pump: EventPump,
     m_time: Time,
-    m_input: Input,
+    m_input: Rc<RefCell<Input>>,
 }
 
 impl Sdl2Context {
@@ -40,7 +44,7 @@ impl Sdl2Context {
         let canvas = window.into_canvas().accelerated().build().unwrap();
         let event_pump = sdl2.event_pump().unwrap();
         let time = Time::new(&sdl2, FPS).unwrap();
-        let input = Input::new().unwrap();
+        let input = Rc::new(RefCell::new(Input::new().unwrap()));
 
         Self {
             _m_sdl2: sdl2,
@@ -52,12 +56,12 @@ impl Sdl2Context {
         }
     }
 
-    pub fn texture_creator(&self) -> TextureCreator<WindowContext> {
+    pub fn get_texture_creator(&self) -> TextureCreator<WindowContext> {
         self.m_canvas.texture_creator()
     }
 
-    pub fn input(&mut self) -> &mut Input {
-        &mut self.m_input
+    pub fn get_input(&self) -> Rc<RefCell<Input>> {
+        self.m_input.clone()
     }
 }
 
@@ -75,10 +79,6 @@ impl App {
     }
 
     pub fn run(&mut self, sdl2: &mut Sdl2Context, assets: &mut Assets) {
-        // sdl2.m_input.subscribe_to_input_event(|event| {
-        //     println!("Event: {:?}", event);
-        // });
-
         let mut events: Vec<Event> = Vec::new();
 
         // Debug render
@@ -108,6 +108,7 @@ impl App {
 
             // tick()
             sdl2.m_input
+                .borrow_mut()
                 .tick(delta_time, &sdl2.m_event_pump.keyboard_state());
 
             for mut entity in self.m_entity_spawner.entity_iter_mut() {

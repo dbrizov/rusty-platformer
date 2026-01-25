@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use sdl2::keyboard::Scancode;
 use serde::Deserialize;
-use std::collections::HashMap;
 
 pub type SubscriberId = u32;
 

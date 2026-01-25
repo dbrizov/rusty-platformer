@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use engine::assets::Assets;
 use engine::components::{
     Component, ComponentBase, ImageComponent, InputComponent, TransformComponent,
@@ -8,7 +11,7 @@ use engine::entity::{Entity, EntityRef};
 use engine::input::{Input, InputEventType};
 use engine::math::Vec2;
 
-pub fn create_player(assets: &mut Assets, input: &'static mut Input) -> EntityRef {
+pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> EntityRef {
     let entity = Entity::new();
 
     let transform_comp = TransformComponent::new();
@@ -16,14 +19,14 @@ pub fn create_player(assets: &mut Assets, input: &'static mut Input) -> EntityRe
     let mut input_comp = InputComponent::new(input);
     input_comp.bind_axis("horizontal", horizontal);
     input_comp.bind_axis("vertical", vertical);
-    input_comp.bind_action("left", InputEventType::Pressed, left);
-    input_comp.bind_action("left", InputEventType::Released, left);
-    input_comp.bind_action("right", InputEventType::Pressed, right);
-    input_comp.bind_action("right", InputEventType::Released, right);
-    input_comp.bind_action("up", InputEventType::Pressed, up);
-    input_comp.bind_action("up", InputEventType::Released, up);
-    input_comp.bind_action("down", InputEventType::Pressed, down);
-    input_comp.bind_action("down", InputEventType::Released, down);
+    input_comp.bind_action("left", InputEventType::Pressed, left_pressed);
+    input_comp.bind_action("left", InputEventType::Released, left_released);
+    input_comp.bind_action("right", InputEventType::Pressed, right_pressed);
+    input_comp.bind_action("right", InputEventType::Released, right_released);
+    input_comp.bind_action("up", InputEventType::Pressed, up_pressed);
+    input_comp.bind_action("up", InputEventType::Released, up_released);
+    input_comp.bind_action("down", InputEventType::Pressed, down_pressed);
+    input_comp.bind_action("down", InputEventType::Released, down_released);
 
     let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
     let image_id = assets.load_texture(image_path).unwrap();
@@ -42,27 +45,43 @@ pub fn create_player(assets: &mut Assets, input: &'static mut Input) -> EntityRe
 }
 
 fn horizontal(axis: f32) {
-    println!("{axis}");
+    println!("horizontal: {axis}");
 }
 
 fn vertical(axis: f32) {
-    println!("{axis}");
+    println!("vertical: {axis}");
 }
 
-fn left() {
-    println!("left");
+fn left_pressed() {
+    println!("left_pressed");
 }
 
-fn right() {
-    println!("right");
+fn left_released() {
+    println!("left_released");
 }
 
-fn up() {
-    println!("up");
+fn right_pressed() {
+    println!("right_pressed");
 }
 
-fn down() {
-    println!("down");
+fn right_released() {
+    println!("right_released");
+}
+
+fn up_pressed() {
+    println!("up_pressed");
+}
+
+fn up_released() {
+    println!("up_released");
+}
+
+fn down_pressed() {
+    println!("down_pressed");
+}
+
+fn down_released() {
+    println!("down_released");
 }
 
 #[derive(ComponentBase)]

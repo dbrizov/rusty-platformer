@@ -1,3 +1,8 @@
+use std::any::Any;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+
 use crate::assets::TextureId;
 use crate::entity::Entity;
 use crate::input::Input;
@@ -8,8 +13,6 @@ use crate::math::Vec2;
 use crate::render::RenderQueue;
 use crate::render::RenderStruct;
 use engine_derive::ComponentBase;
-use std::any::Any;
-use std::collections::HashMap;
 
 pub mod component_priority {
     pub const INPUT: i32 = -150;
@@ -169,7 +172,7 @@ impl ImageComponent {
 #[derive(ComponentBase)]
 pub struct InputComponent {
     m_entity: *mut Entity,
-    m_input: &'static mut Input,
+    m_input: Rc<RefCell<Input>>,
     m_input_subscriber_id: SubscriberId,
     m_next_handler_id: u32,
     m_handlers_by_axis: HashMap<String, Vec<(u32, Box<dyn Fn(f32)>)>>,
@@ -184,24 +187,28 @@ impl Component for InputComponent {
 
     fn enter_play(&mut self) {
         let self_ptr: *const InputComponent = self;
-        self.m_input_subscriber_id = self.m_input.subscribe_to_input_event(move |event| {
-            unsafe {
-                // SAFETY:
-                // - Engine guarantees unsubscribe before drop
-                // - Callback never runs after exit_play
-                (*self_ptr).on_input_event(event);
-            }
-        });
+        self.m_input_subscriber_id =
+            self.m_input
+                .borrow_mut()
+                .subscribe_to_input_event(move |event| {
+                    unsafe {
+                        // SAFETY:
+                        // - Engine guarantees unsubscribe before drop
+                        // - Callback never runs after exit_play
+                        (*self_ptr).on_input_event(event);
+                    }
+                });
     }
 
     fn exit_play(&mut self) {
         self.m_input
+            .borrow_mut()
             .unsubscribe_from_input_event(self.m_input_subscriber_id);
     }
 }
 
 impl InputComponent {
-    pub fn new(input: &'static mut Input) -> Self {
+    pub fn new(input: Rc<RefCell<Input>>) -> Self {
         Self {
             m_entity: std::ptr::null_mut(),
             m_input: input,
