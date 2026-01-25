@@ -2,6 +2,8 @@ use sdl2::keyboard::Scancode;
 use serde::Deserialize;
 use std::collections::HashMap;
 
+pub type SubscriberId = u32;
+
 // Public
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum InputEventType {
@@ -18,7 +20,8 @@ pub struct InputEvent<'a> {
 }
 
 pub struct Input {
-    pub on_input_event: Vec<Box<dyn Fn(&InputEvent)>>,
+    m_on_input_event: Vec<(SubscriberId, Box<dyn Fn(&InputEvent)>)>,
+    m_next_subscriber_id: SubscriberId,
 
     m_input_mappings: InputMappings,
     m_axis_values: HashMap<String, f32>,
@@ -38,7 +41,8 @@ impl Input {
             .collect();
 
         Ok(Input {
-            on_input_event: Vec::new(),
+            m_on_input_event: Vec::new(),
+            m_next_subscriber_id: 0,
             m_input_mappings: input_mappings,
             m_axis_values: axis_values,
             m_relevant_keys: relevant_keys,
@@ -117,6 +121,28 @@ impl Input {
         }
     }
 
+    pub fn subscribe_to_input_event<T>(&mut self, handler: T) -> SubscriberId
+    where
+        T: Fn(&InputEvent) + 'static,
+    {
+        let sub_id = self.m_next_subscriber_id;
+        self.m_next_subscriber_id += 1;
+        self.m_on_input_event.push((sub_id, Box::new(handler)));
+
+        sub_id
+    }
+
+    pub fn unsubscribe_from_input_event(&mut self, subscriber_id: SubscriberId) {
+        self.m_on_input_event
+            .retain(|(sub_id, _)| *sub_id != subscriber_id);
+    }
+
+    fn dispatch_event(&self, event: InputEvent) {
+        for (_, handler) in &self.m_on_input_event {
+            handler(&event);
+        }
+    }
+
     fn update_pressed_keys(&mut self, keyboard_state: &sdl2::keyboard::KeyboardState) {
         self.m_pressed_keys_last_frame.clear();
         for key in &self.m_pressed_keys_this_frame {
@@ -128,12 +154,6 @@ impl Input {
             if keyboard_state.is_scancode_pressed(*key) {
                 self.m_pressed_keys_this_frame.push(*key);
             }
-        }
-    }
-
-    fn dispatch_event(&self, event: InputEvent) {
-        for handler in &self.on_input_event {
-            handler(&event);
         }
     }
 }

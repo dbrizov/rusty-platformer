@@ -71,9 +71,9 @@ impl App {
     }
 
     pub fn run(&mut self, sdl2: &mut Sdl2Context, assets: &mut Assets) {
-        sdl2.m_input.on_input_event.push(Box::new(|event| {
+        sdl2.m_input.subscribe_to_input_event(|event| {
             println!("Event: {:?}", event);
-        }));
+        });
 
         let mut events: Vec<Event> = Vec::new();
 

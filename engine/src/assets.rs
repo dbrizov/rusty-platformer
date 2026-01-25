@@ -4,9 +4,7 @@ use sdl2::video::WindowContext;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-pub type TextureId = i32;
-pub const TEXTURE_ID_INVALID: TextureId = -1;
-pub const TEXTURE_ID_INITIAL: TextureId = 0;
+pub type TextureId = u32;
 
 pub struct Assets {
     m_assets_root: String,
@@ -24,7 +22,7 @@ impl Assets {
             m_assets_root: assets_root.as_ref().to_string_lossy().into(),
             m_texture_creator: texture_creator,
             m_textures: HashMap::new(),
-            m_next_texture_id: TEXTURE_ID_INITIAL,
+            m_next_texture_id: 0,
         }
     }
 
@@ -76,8 +74,8 @@ impl Assets {
         let texture: Texture<'static> = unsafe { std::mem::transmute(texture) };
 
         let texture_id = self.m_next_texture_id;
-        self.m_textures.insert(texture_id, texture);
         self.m_next_texture_id += 1;
+        self.m_textures.insert(texture_id, texture);
 
         Ok(texture_id)
     }
