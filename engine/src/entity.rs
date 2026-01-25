@@ -78,9 +78,9 @@ impl Entity {
         self.m_is_ticking = is_ticking;
     }
 
-    pub fn add_component<T>(&mut self, mut comp: Box<T>)
+    pub fn add_component<T>(&mut self, mut comp: T)
     where
-        T: Component + 'static,
+        T: Component,
     {
         if self.is_in_play() {
             comp.enter_play();
@@ -90,13 +90,13 @@ impl Entity {
             comp.set_entity_ptr(self as *mut Entity);
         }
 
-        self.m_components.push(comp);
+        self.m_components.push(comp.into_box());
         self.m_components.sort_by_key(|c| c.priority());
     }
 
     pub fn get_component<T>(&self) -> Option<&T>
     where
-        T: Component + 'static,
+        T: Component,
     {
         self.m_components
             .iter()
@@ -105,7 +105,7 @@ impl Entity {
 
     pub fn get_component_mut<T>(&mut self) -> Option<&mut T>
     where
-        T: Component + 'static,
+        T: Component,
     {
         self.m_components
             .iter_mut()

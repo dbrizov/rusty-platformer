@@ -8,12 +8,12 @@ use engine::math::Vec2;
 
 pub fn create_player(assets: &mut Assets) -> EntityRef {
     let entity = Entity::new_rc();
-    let transform_comp = TransformComponent::new_box();
-    let player_comp = PlayerComponent::new_box();
+    let transform_comp = TransformComponent::new();
+    let player_comp = PlayerComponent::new();
 
     let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
     let image_id = assets.load_texture(image_path).unwrap();
-    let image_comp = ImageComponent::new_box_scaled(image_id, Vec2::one() * 2.0);
+    let image_comp = ImageComponent::new_scaled(image_id, Vec2::one() * 2.0);
 
     {
         let mut entity_ref = entity.borrow_mut();
@@ -31,10 +31,10 @@ pub struct PlayerComponent {
 }
 
 impl PlayerComponent {
-    pub fn new_box() -> Box<Self> {
-        Box::new(Self {
+    pub fn new() -> Self {
+        Self {
             m_entity: std::ptr::null_mut(),
-        })
+        }
     }
 }
 

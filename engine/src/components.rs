@@ -39,7 +39,14 @@ pub trait ComponentBase {
 }
 
 #[allow(unused_variables)]
-pub trait Component: ComponentBase + AsAny {
+pub trait Component: ComponentBase + AsAny + 'static {
+    fn into_box(self) -> Box<dyn Component>
+    where
+        Self: Sized,
+    {
+        Box::new(self)
+    }
+
     fn priority(&self) -> i32 {
         component_priority::DEFAULT
     }
@@ -60,12 +67,12 @@ pub struct TransformComponent {
 }
 
 impl TransformComponent {
-    pub fn new_box() -> Box<Self> {
-        Box::new(Self {
+    pub fn new() -> Self {
+        Self {
             m_entity: std::ptr::null_mut(),
             m_position: Vec2::zero(),
             m_prev_position: Vec2::zero(),
-        })
+        }
     }
 
     pub fn get_position(&self) -> Vec2 {
@@ -97,16 +104,16 @@ pub struct ImageComponent {
 }
 
 impl ImageComponent {
-    pub fn new_box(texture_id: TextureId) -> Box<Self> {
-        ImageComponent::new_box_scaled(texture_id, Vec2::one())
+    pub fn new(texture_id: TextureId) -> Self {
+        ImageComponent::new_scaled(texture_id, Vec2::one())
     }
 
-    pub fn new_box_scaled(texture_id: TextureId, scale: Vec2) -> Box<Self> {
-        Box::new(Self {
+    pub fn new_scaled(texture_id: TextureId, scale: Vec2) -> Self {
+        Self {
             m_entity: std::ptr::null_mut(),
             m_texture_id: texture_id,
             m_scale: scale,
-        })
+        }
     }
 
     pub fn get_texture_id(&self) -> TextureId {
