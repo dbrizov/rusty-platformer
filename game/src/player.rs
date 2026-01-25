@@ -4,6 +4,7 @@ use engine::components::{
 };
 use engine::engine_derive::ComponentBase;
 use engine::entity::{Entity, EntityRef};
+use engine::math::Vec2;
 
 pub fn create_player(assets: &mut Assets) -> EntityRef {
     let entity = Entity::new_rc();
@@ -12,7 +13,7 @@ pub fn create_player(assets: &mut Assets) -> EntityRef {
 
     let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
     let image_id = assets.load_texture(image_path).unwrap();
-    let image_comp = ImageComponent::new_box(image_id);
+    let image_comp = ImageComponent::new_box_scaled(image_id, Vec2::one() * 2.0);
 
     {
         let mut entity_ref = entity.borrow_mut();

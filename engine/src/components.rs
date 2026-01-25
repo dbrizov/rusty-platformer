@@ -1,11 +1,9 @@
-use crate::assets::Assets;
 use crate::assets::TextureId;
 use crate::entity::Entity;
 use crate::math::Vec2;
+use crate::render::RenderQueue;
+use crate::render::RenderStruct;
 use engine_derive::ComponentBase;
-use sdl2::rect::Rect;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
 use std::any::Any;
 
 pub mod component_priority {
@@ -50,7 +48,7 @@ pub trait Component: ComponentBase + AsAny {
     fn exit_play(&mut self) {}
     fn tick(&mut self, _delta_time: f32) {}
     fn physics_tick(&mut self, _fixed_delta_time: f32) {}
-    fn render_tick(&mut self, _delta_time: f32, canvas: &mut Canvas<Window>, assets: &Assets) {}
+    fn render_tick(&mut self, _delta_time: f32, render_queue: &mut RenderQueue) {}
 }
 
 // Transform Component
@@ -95,13 +93,19 @@ impl Component for TransformComponent {
 pub struct ImageComponent {
     m_entity: *mut Entity,
     m_texture_id: TextureId,
+    m_scale: Vec2,
 }
 
 impl ImageComponent {
     pub fn new_box(texture_id: TextureId) -> Box<Self> {
+        ImageComponent::new_box_scaled(texture_id, Vec2::one())
+    }
+
+    pub fn new_box_scaled(texture_id: TextureId, scale: Vec2) -> Box<Self> {
         Box::new(Self {
             m_entity: std::ptr::null_mut(),
             m_texture_id: texture_id,
+            m_scale: scale,
         })
     }
 
@@ -119,27 +123,17 @@ impl Component for ImageComponent {
         component_priority::RENDER
     }
 
-    fn render_tick(&mut self, _delta_time: f32, canvas: &mut Canvas<Window>, assets: &Assets) {
-        if let Some(texture) = assets.get_texture(self.m_texture_id) {
-            let transform = self
-                .get_entity()
-                .get_component::<TransformComponent>()
-                .unwrap();
-            let pos = transform.get_position();
+    fn render_tick(&mut self, _delta_time: f32, render_queue: &mut RenderQueue) {
+        let transform = self
+            .get_entity()
+            .get_component::<TransformComponent>()
+            .unwrap();
 
-            let query = texture.query();
-            let dst = Rect::new(
-                pos.x as i32,
-                pos.y as i32,
-                query.width * 2,
-                query.height * 2,
-            );
-
-            if let Err(err) = canvas.copy(texture, None, dst) {
-                eprintln!("Render error: {}", err);
-            }
-        } else {
-            eprintln!("Texture with 'texture_id={}' not found", self.m_texture_id);
-        }
+        render_queue.enqueue(RenderStruct::new(
+            self.m_texture_id,
+            transform.get_position(),
+            transform.get_prev_position(),
+            self.m_scale,
+        ));
     }
 }

@@ -1,14 +1,15 @@
-use sdl2::event::Event;
-use sdl2::image::{InitFlag, Sdl2ImageContext};
-use sdl2::pixels::Color;
-use sdl2::render::{Canvas, TextureCreator};
-use sdl2::video::{Window, WindowContext};
-use sdl2::{EventPump, Sdl};
-
 use crate::assets::Assets;
 use crate::entity::{EntityId, EntityRef, EntitySpawner};
 use crate::input::Input;
+use crate::render::RenderQueue;
 use crate::time::Time;
+use sdl2::event::Event;
+use sdl2::image::{InitFlag, Sdl2ImageContext};
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
+use sdl2::render::{Canvas, TextureCreator};
+use sdl2::video::{Window, WindowContext};
+use sdl2::{EventPump, Sdl};
 
 const FPS: u32 = 60;
 const WINDOW_TITLE: &str = "Rusty Platform";
@@ -58,12 +59,14 @@ impl Sdl2Context {
 
 pub struct App {
     m_entity_spawner: EntitySpawner,
+    m_render_queue: RenderQueue,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
             m_entity_spawner: EntitySpawner::new(),
+            m_render_queue: RenderQueue::new(),
         }
     }
 
@@ -114,7 +117,28 @@ impl App {
             sdl2.m_canvas.clear();
 
             for mut entity in self.m_entity_spawner.entity_iter_mut() {
-                entity.render_tick(scaled_delta_time, &mut sdl2.m_canvas, assets);
+                entity.render_tick(scaled_delta_time, &mut self.m_render_queue);
+            }
+
+            for render_struct in self.m_render_queue.drain() {
+                if let Some(texture) = assets.get_texture(render_struct.texture_id) {
+                    let query = texture.query();
+                    let destination = Rect::new(
+                        render_struct.position.x as i32,
+                        render_struct.position.y as i32,
+                        query.width * (render_struct.scale.x as u32),
+                        query.height * (render_struct.scale.y as u32),
+                    );
+
+                    if let Err(err) = sdl2.m_canvas.copy(texture, None, destination) {
+                        eprintln!("Render error: {}", err);
+                    }
+                } else {
+                    eprintln!(
+                        "Texture with 'texture_id={}' not found",
+                        render_struct.texture_id
+                    );
+                }
             }
 
             sdl2.m_canvas.present();

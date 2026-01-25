@@ -1,7 +1,5 @@
-use crate::assets::Assets;
 use crate::components::Component;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
+use crate::render::RenderQueue;
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::mem;
@@ -54,9 +52,9 @@ impl Entity {
         }
     }
 
-    pub fn render_tick(&mut self, delta_time: f32, canvas: &mut Canvas<Window>, assets: &Assets) {
+    pub fn render_tick(&mut self, delta_time: f32, render_queue: &mut RenderQueue) {
         for comp in &mut self.m_components {
-            comp.render_tick(delta_time, canvas, assets);
+            comp.render_tick(delta_time, render_queue);
         }
     }
 
