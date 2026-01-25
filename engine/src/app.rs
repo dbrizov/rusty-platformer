@@ -12,7 +12,7 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
 
 const FPS: u32 = 60;
-const WINDOW_TITLE: &str = "Rusty Platform";
+const WINDOW_TITLE: &str = "Rusty Platformer";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
 

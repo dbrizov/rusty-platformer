@@ -7,7 +7,7 @@ use engine::entity::{Entity, EntityRef};
 use engine::math::Vec2;
 
 pub fn create_player(assets: &mut Assets) -> EntityRef {
-    let entity = Entity::new_rc();
+    let entity = Entity::new();
     let transform_comp = TransformComponent::new();
     let player_comp = PlayerComponent::new();
 

@@ -17,7 +17,7 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn new_rc() -> EntityRef {
+    pub fn new() -> EntityRef {
         Rc::new(RefCell::new(Self {
             m_id: 0,
             m_components: Vec::new(),
