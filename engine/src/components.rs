@@ -64,6 +64,7 @@ pub struct TransformComponent {
     m_entity: *mut Entity,
     m_position: Vec2,
     m_prev_position: Vec2,
+    m_scale: Vec2,
 }
 
 impl TransformComponent {
@@ -72,6 +73,7 @@ impl TransformComponent {
             m_entity: std::ptr::null_mut(),
             m_position: Vec2::zero(),
             m_prev_position: Vec2::zero(),
+            m_scale: Vec2::one(),
         }
     }
 
@@ -86,6 +88,14 @@ impl TransformComponent {
 
     pub fn get_prev_position(&self) -> Vec2 {
         self.m_prev_position
+    }
+
+    pub fn get_scale(&self) -> Vec2 {
+        self.m_scale
+    }
+
+    pub fn set_scale(&mut self, scale: Vec2) {
+        self.m_scale = scale;
     }
 }
 
@@ -105,14 +115,10 @@ pub struct ImageComponent {
 
 impl ImageComponent {
     pub fn new(texture_id: TextureId) -> Self {
-        ImageComponent::new_scaled(texture_id, Vec2::one())
-    }
-
-    pub fn new_scaled(texture_id: TextureId, scale: Vec2) -> Self {
         Self {
             m_entity: std::ptr::null_mut(),
             m_texture_id: texture_id,
-            m_scale: scale,
+            m_scale: Vec2::one(),
         }
     }
 
@@ -122,6 +128,14 @@ impl ImageComponent {
 
     pub fn set_texture_id(&mut self, id: TextureId) {
         self.m_texture_id = id;
+    }
+
+    pub fn get_scale(&self) -> Vec2 {
+        self.m_scale
+    }
+
+    pub fn set_scale(&mut self, scale: Vec2) {
+        self.m_scale = scale;
     }
 }
 
@@ -136,11 +150,12 @@ impl Component for ImageComponent {
             .get_component::<TransformComponent>()
             .unwrap();
 
+        let t_scale = transform.get_scale();
         render_queue.enqueue(RenderStruct::new(
             self.m_texture_id,
             transform.get_position(),
             transform.get_prev_position(),
-            self.m_scale,
+            Vec2::from_xy(self.m_scale.x * t_scale.x, self.m_scale.y * t_scale.y),
         ));
     }
 }
