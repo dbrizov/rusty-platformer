@@ -186,17 +186,12 @@ impl Component for InputComponent {
     }
 
     fn enter_play(&mut self) {
-        let self_ptr: *const InputComponent = self;
+        let this: *const InputComponent = self;
         self.m_input_subscriber_id =
             self.m_input
                 .borrow_mut()
-                .subscribe_to_input_event(move |event| {
-                    unsafe {
-                        // SAFETY:
-                        // - Engine guarantees unsubscribe before drop
-                        // - Callback never runs after exit_play
-                        (*self_ptr).on_input_event(event);
-                    }
+                .subscribe_to_input_event(move |event| unsafe {
+                    (*this).on_input_event(event);
                 });
     }
 

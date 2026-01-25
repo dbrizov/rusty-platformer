@@ -8,7 +8,7 @@ use engine::components::{
 };
 use engine::engine_derive::ComponentBase;
 use engine::entity::{Entity, EntityRef};
-use engine::input::{Input, InputEventType};
+use engine::input::Input;
 use engine::math::Vec2;
 
 pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> EntityRef {
@@ -16,17 +16,7 @@ pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> EntityRe
 
     let transform_comp = TransformComponent::new();
     let player_comp = PlayerComponent::new();
-    let mut input_comp = InputComponent::new(input);
-    input_comp.bind_axis("horizontal", horizontal);
-    input_comp.bind_axis("vertical", vertical);
-    input_comp.bind_action("left", InputEventType::Pressed, left_pressed);
-    input_comp.bind_action("left", InputEventType::Released, left_released);
-    input_comp.bind_action("right", InputEventType::Pressed, right_pressed);
-    input_comp.bind_action("right", InputEventType::Released, right_released);
-    input_comp.bind_action("up", InputEventType::Pressed, up_pressed);
-    input_comp.bind_action("up", InputEventType::Released, up_released);
-    input_comp.bind_action("down", InputEventType::Pressed, down_pressed);
-    input_comp.bind_action("down", InputEventType::Released, down_released);
+    let input_comp = InputComponent::new(input);
 
     let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
     let image_id = assets.load_texture(image_path).unwrap();
@@ -44,61 +34,61 @@ pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> EntityRe
     entity
 }
 
-fn horizontal(axis: f32) {
-    println!("horizontal: {axis}");
-}
-
-fn vertical(axis: f32) {
-    println!("vertical: {axis}");
-}
-
-fn left_pressed() {
-    println!("left_pressed");
-}
-
-fn left_released() {
-    println!("left_released");
-}
-
-fn right_pressed() {
-    println!("right_pressed");
-}
-
-fn right_released() {
-    println!("right_released");
-}
-
-fn up_pressed() {
-    println!("up_pressed");
-}
-
-fn up_released() {
-    println!("up_released");
-}
-
-fn down_pressed() {
-    println!("down_pressed");
-}
-
-fn down_released() {
-    println!("down_released");
-}
-
 #[derive(ComponentBase)]
 pub struct PlayerComponent {
     m_entity: *mut Entity,
+    m_horizontal_id: u32,
+    m_vertical_id: u32,
 }
 
 impl PlayerComponent {
     pub fn new() -> Self {
         Self {
             m_entity: std::ptr::null_mut(),
+            m_horizontal_id: 0,
+            m_vertical_id: 0,
         }
+    }
+
+    fn horizontal(&mut self, axis: f32) {
+        println!("horizontal: {axis}");
+    }
+
+    fn vertical(&mut self, axis: f32) {
+        println!("vertical: {axis}");
     }
 }
 
 impl Component for PlayerComponent {
     fn priority(&self) -> i32 {
         component_priority::DEFAULT
+    }
+
+    fn enter_play(&mut self) {
+        let this: *mut PlayerComponent = self;
+        unsafe {
+            let input_comp = (*this)
+                .get_entity_mut()
+                .get_component_mut::<InputComponent>()
+                .unwrap();
+
+            (*this).m_horizontal_id = input_comp.bind_axis("horizontal", move |axis| {
+                (*this).horizontal(axis);
+            });
+
+            (*this).m_vertical_id = input_comp.bind_axis("vertical", move |axis| {
+                (*this).vertical(axis);
+            });
+        }
+    }
+
+    fn exit_play(&mut self) {
+        let input_comp = self
+            .get_entity_mut()
+            .get_component_mut::<InputComponent>()
+            .unwrap();
+
+        input_comp.unbind_axis("horizontal", self.m_horizontal_id);
+        input_comp.unbind_axis("vertical", self.m_vertical_id);
     }
 }
