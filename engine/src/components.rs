@@ -1,10 +1,15 @@
 use crate::assets::TextureId;
 use crate::entity::Entity;
+use crate::input::Input;
+use crate::input::InputEvent;
+use crate::input::InputEventType;
+use crate::input::SubscriberId;
 use crate::math::Vec2;
 use crate::render::RenderQueue;
 use crate::render::RenderStruct;
 use engine_derive::ComponentBase;
 use std::any::Any;
+use std::collections::HashMap;
 
 pub mod component_priority {
     pub const INPUT: i32 = -150;
@@ -67,6 +72,12 @@ pub struct TransformComponent {
     m_scale: Vec2,
 }
 
+impl Component for TransformComponent {
+    fn priority(&self) -> i32 {
+        component_priority::TRANSFORM
+    }
+}
+
 impl TransformComponent {
     pub fn new() -> Self {
         Self {
@@ -99,18 +110,33 @@ impl TransformComponent {
     }
 }
 
-impl Component for TransformComponent {
-    fn priority(&self) -> i32 {
-        component_priority::TRANSFORM
-    }
-}
-
 // Image Component
 #[derive(ComponentBase)]
 pub struct ImageComponent {
     m_entity: *mut Entity,
     m_texture_id: TextureId,
     m_scale: Vec2,
+}
+
+impl Component for ImageComponent {
+    fn priority(&self) -> i32 {
+        component_priority::RENDER
+    }
+
+    fn render_tick(&mut self, _delta_time: f32, render_queue: &mut RenderQueue) {
+        let transform = self
+            .get_entity()
+            .get_component::<TransformComponent>()
+            .unwrap();
+
+        let t_scale = transform.get_scale();
+        render_queue.enqueue(RenderStruct::new(
+            self.m_texture_id,
+            transform.get_position(),
+            transform.get_prev_position(),
+            Vec2::from_xy(self.m_scale.x * t_scale.x, self.m_scale.y * t_scale.y),
+        ));
+    }
 }
 
 impl ImageComponent {
@@ -139,23 +165,172 @@ impl ImageComponent {
     }
 }
 
-impl Component for ImageComponent {
+// Input Component
+#[derive(ComponentBase)]
+pub struct InputComponent {
+    m_entity: *mut Entity,
+    m_input: &'static mut Input,
+    m_input_subscriber_id: SubscriberId,
+    m_next_handler_id: u32,
+    m_handlers_by_axis: HashMap<String, Vec<(u32, Box<dyn Fn(f32)>)>>,
+    m_handlers_by_action_pressed: HashMap<String, Vec<(u32, Box<dyn Fn()>)>>,
+    m_handlers_by_action_released: HashMap<String, Vec<(u32, Box<dyn Fn()>)>>,
+}
+
+impl Component for InputComponent {
     fn priority(&self) -> i32 {
-        component_priority::RENDER
+        component_priority::INPUT
     }
 
-    fn render_tick(&mut self, _delta_time: f32, render_queue: &mut RenderQueue) {
-        let transform = self
-            .get_entity()
-            .get_component::<TransformComponent>()
-            .unwrap();
+    fn enter_play(&mut self) {
+        let self_ptr: *const InputComponent = self;
+        self.m_input_subscriber_id = self.m_input.subscribe_to_input_event(move |event| {
+            unsafe {
+                // SAFETY:
+                // - Engine guarantees unsubscribe before drop
+                // - Callback never runs after exit_play
+                (*self_ptr).on_input_event(event);
+            }
+        });
+    }
 
-        let t_scale = transform.get_scale();
-        render_queue.enqueue(RenderStruct::new(
-            self.m_texture_id,
-            transform.get_position(),
-            transform.get_prev_position(),
-            Vec2::from_xy(self.m_scale.x * t_scale.x, self.m_scale.y * t_scale.y),
-        ));
+    fn exit_play(&mut self) {
+        self.m_input
+            .unsubscribe_from_input_event(self.m_input_subscriber_id);
+    }
+}
+
+impl InputComponent {
+    pub fn new(input: &'static mut Input) -> Self {
+        Self {
+            m_entity: std::ptr::null_mut(),
+            m_input: input,
+            m_input_subscriber_id: 0,
+            m_next_handler_id: 0,
+            m_handlers_by_axis: HashMap::new(),
+            m_handlers_by_action_pressed: HashMap::new(),
+            m_handlers_by_action_released: HashMap::new(),
+        }
+    }
+
+    pub fn bind_axis<T>(&mut self, axis_name: &str, handler: T) -> u32
+    where
+        T: Fn(f32) + 'static,
+    {
+        let axis_name_copy = axis_name.to_string();
+        let handler_id = self.m_next_handler_id;
+        self.m_next_handler_id += 1;
+
+        self.m_handlers_by_axis
+            .entry(axis_name_copy)
+            .or_insert_with(Vec::new)
+            .push((handler_id, Box::new(handler)));
+
+        handler_id
+    }
+
+    pub fn unbind_axis(&mut self, axis_name: &str, handler_id: u32) {
+        if let Some(handlers) = self.m_handlers_by_axis.get_mut(axis_name) {
+            handlers.retain(|(id, _)| *id != handler_id);
+
+            if handlers.is_empty() {
+                self.m_handlers_by_axis.remove(axis_name);
+            }
+        }
+    }
+
+    pub fn unbind_all_axis(&mut self, axis_name: &str) {
+        self.m_handlers_by_axis.remove(axis_name);
+    }
+
+    pub fn bind_action<T>(
+        &mut self,
+        action_name: &str,
+        event_type: InputEventType,
+        handler: T,
+    ) -> u32
+    where
+        T: Fn() + 'static,
+    {
+        let action_name_copy = action_name.to_string();
+        let handler_id = self.m_next_handler_id;
+        self.m_next_handler_id += 1;
+
+        match event_type {
+            InputEventType::Pressed => {
+                self.m_handlers_by_action_pressed
+                    .entry(action_name_copy)
+                    .or_insert_with(Vec::new)
+                    .push((handler_id, Box::new(handler)));
+            }
+            InputEventType::Released => {
+                self.m_handlers_by_action_released
+                    .entry(action_name_copy)
+                    .or_insert_with(Vec::new)
+                    .push((handler_id, Box::new(handler)));
+            }
+            _ => {}
+        }
+
+        handler_id
+    }
+
+    pub fn unbind_action(
+        &mut self,
+        action_name: &str,
+        event_type: InputEventType,
+        handler_id: u32,
+    ) {
+        match event_type {
+            InputEventType::Pressed => {
+                if let Some(handlers) = self.m_handlers_by_action_pressed.get_mut(action_name) {
+                    handlers.retain(|(id, _)| *id != handler_id);
+                }
+            }
+            InputEventType::Released => {
+                if let Some(handlers) = self.m_handlers_by_action_released.get_mut(action_name) {
+                    handlers.retain(|(id, _)| *id != handler_id);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn unbind_all_actions(&mut self, action_name: &str, event_type: InputEventType) {
+        match event_type {
+            InputEventType::Pressed => {
+                self.m_handlers_by_action_pressed.remove(action_name);
+            }
+            InputEventType::Released => {
+                self.m_handlers_by_action_released.remove(action_name);
+            }
+            _ => {}
+        }
+    }
+
+    fn on_input_event(&self, event: &InputEvent) {
+        match event.ev_type {
+            InputEventType::Axis => {
+                if let Some(handlers) = self.m_handlers_by_axis.get(event.ev_name) {
+                    for (_, handler) in handlers {
+                        handler(event.axis_value);
+                    }
+                }
+            }
+            InputEventType::Pressed => {
+                if let Some(handlers) = self.m_handlers_by_action_pressed.get(event.ev_name) {
+                    for (_, handler) in handlers {
+                        handler();
+                    }
+                }
+            }
+            InputEventType::Released => {
+                if let Some(handlers) = self.m_handlers_by_action_released.get(event.ev_name) {
+                    for (_, handler) in handlers {
+                        handler();
+                    }
+                }
+            }
+        };
     }
 }

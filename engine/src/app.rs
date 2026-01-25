@@ -55,6 +55,10 @@ impl Sdl2Context {
     pub fn texture_creator(&self) -> TextureCreator<WindowContext> {
         self.m_canvas.texture_creator()
     }
+
+    pub fn input(&mut self) -> &mut Input {
+        &mut self.m_input
+    }
 }
 
 pub struct App {
@@ -71,9 +75,9 @@ impl App {
     }
 
     pub fn run(&mut self, sdl2: &mut Sdl2Context, assets: &mut Assets) {
-        sdl2.m_input.subscribe_to_input_event(|event| {
-            println!("Event: {:?}", event);
-        });
+        // sdl2.m_input.subscribe_to_input_event(|event| {
+        //     println!("Event: {:?}", event);
+        // });
 
         let mut events: Vec<Event> = Vec::new();
 

@@ -7,9 +7,9 @@ pub type SubscriberId = u32;
 // Public
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum InputEventType {
+    Axis,
     Pressed,
     Released,
-    Axis,
 }
 
 #[derive(Debug)]
