@@ -106,8 +106,8 @@ impl App {
 
             self.m_entity_spawner.resolve();
 
-            let delta_time: f32 = sdl2.m_time.get_delta_time();
-            let scaled_delta_time: f32 = delta_time * sdl2.m_time.get_time_scale();
+            let delta_time = sdl2.m_time.get_delta_time();
+            let scaled_delta_time = delta_time * sdl2.m_time.get_time_scale();
 
             // tick()
             sdl2.m_input
