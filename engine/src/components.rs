@@ -241,10 +241,6 @@ impl InputComponent {
         }
     }
 
-    pub fn unbind_all_axis(&mut self, axis_name: &str) {
-        self.m_handlers_by_axis.remove(axis_name);
-    }
-
     pub fn bind_action<T>(
         &mut self,
         action_name: &str,
@@ -277,37 +273,28 @@ impl InputComponent {
         handler_id
     }
 
-    pub fn unbind_action(
-        &mut self,
-        action_name: &str,
-        event_type: InputEventType,
-        handler_id: u32,
-    ) {
-        match event_type {
-            InputEventType::Pressed => {
-                if let Some(handlers) = self.m_handlers_by_action_pressed.get_mut(action_name) {
-                    handlers.retain(|(id, _)| *id != handler_id);
-                }
+    pub fn unbind_action(&mut self, action_name: &str, handler_id: u32) {
+        if let Some(handlers) = self.m_handlers_by_action_pressed.get_mut(action_name) {
+            handlers.retain(|(id, _)| *id != handler_id);
+
+            if handlers.is_empty() {
+                self.m_handlers_by_action_pressed.remove(action_name);
             }
-            InputEventType::Released => {
-                if let Some(handlers) = self.m_handlers_by_action_released.get_mut(action_name) {
-                    handlers.retain(|(id, _)| *id != handler_id);
-                }
+        }
+
+        if let Some(handlers) = self.m_handlers_by_action_released.get_mut(action_name) {
+            handlers.retain(|(id, _)| *id != handler_id);
+
+            if handlers.is_empty() {
+                self.m_handlers_by_action_released.remove(action_name);
             }
-            _ => {}
         }
     }
 
-    pub fn unbind_all_actions(&mut self, action_name: &str, event_type: InputEventType) {
-        match event_type {
-            InputEventType::Pressed => {
-                self.m_handlers_by_action_pressed.remove(action_name);
-            }
-            InputEventType::Released => {
-                self.m_handlers_by_action_released.remove(action_name);
-            }
-            _ => {}
-        }
+    pub fn clear_all_bindings(&mut self) {
+        self.m_handlers_by_axis.clear();
+        self.m_handlers_by_action_pressed.clear();
+        self.m_handlers_by_action_released.clear();
     }
 
     fn on_input_event(&self, event: &InputEvent) {
