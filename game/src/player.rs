@@ -103,9 +103,15 @@ impl Component for PlayerComponent {
             .get_component_mut::<TransformComponent>()
             .unwrap();
 
-        let normalized_movement_input = self.m_movement_input.normalized();
-        let pos_delta_x = Vec2::right() * normalized_movement_input.x;
-        let pos_delta_y = Vec2::up() * normalized_movement_input.y;
+        let movement_input;
+        if self.m_movement_input.len_sqr() > 1.0 {
+            movement_input = self.m_movement_input.normalized();
+        } else {
+            movement_input = self.m_movement_input;
+        }
+
+        let pos_delta_x = Vec2::right() * movement_input.x;
+        let pos_delta_y = Vec2::up() * movement_input.y;
         let pos_delta = (pos_delta_x + pos_delta_y) * self.m_speed * _delta_time;
         let new_pos = transform_comp.get_position() + pos_delta;
         transform_comp.set_position(new_pos);
