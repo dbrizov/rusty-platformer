@@ -41,7 +41,7 @@ where
 }
 
 pub trait ComponentBase {
-    unsafe fn set_entity_ptr(&mut self, entity: *mut Entity);
+    unsafe fn set_entity(&mut self, entity: *mut Entity);
     fn get_entity(&self) -> &Entity;
     fn get_entity_mut(&self) -> &mut Entity;
 }

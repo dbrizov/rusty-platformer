@@ -88,7 +88,7 @@ impl Entity {
         }
 
         unsafe {
-            comp.set_entity_ptr(self as *mut Entity);
+            comp.set_entity(self as *mut Entity);
         }
 
         self.m_components.push(comp.into_box());

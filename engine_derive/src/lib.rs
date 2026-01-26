@@ -56,7 +56,7 @@ pub fn derive_component(input: TokenStream) -> TokenStream {
     // Generate the Component impl
     let expanded = quote! {
         impl ComponentBase for #struct_name {
-            unsafe fn set_entity_ptr(&mut self, entity: *mut Entity) {
+            unsafe fn set_entity(&mut self, entity: *mut Entity) {
                 self.#entity_field = entity;
             }
 
