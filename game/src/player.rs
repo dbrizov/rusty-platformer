@@ -7,13 +7,11 @@ use engine::components::{
     component_priority,
 };
 use engine::engine_derive::ComponentBase;
-use engine::entity::{Entity, EntityRef};
+use engine::entity::Entity;
 use engine::input::Input;
 use engine::math::Vec2;
 
-pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> EntityRef {
-    let entity = Entity::new();
-
+pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> Box<Entity> {
     let transform_comp = TransformComponent::new();
     let player_comp = PlayerComponent::new();
     let input_comp = InputComponent::new(input);
@@ -23,13 +21,11 @@ pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> EntityRe
     let mut image_comp = ImageComponent::new(image_id);
     image_comp.set_scale(Vec2::one() * 2.0);
 
-    {
-        let mut entity_ref = entity.borrow_mut();
-        entity_ref.add_component(transform_comp);
-        entity_ref.add_component(player_comp);
-        entity_ref.add_component(input_comp);
-        entity_ref.add_component(image_comp);
-    }
+    let mut entity = Entity::new();
+    entity.add_component(transform_comp);
+    entity.add_component(player_comp);
+    entity.add_component(input_comp);
+    entity.add_component(image_comp);
 
     entity
 }

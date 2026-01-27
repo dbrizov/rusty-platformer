@@ -10,7 +10,7 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
 
 use crate::assets::Assets;
-use crate::entity::{EntityId, EntityRef, EntitySpawner};
+use crate::entity::{Entity, EntityId, EntitySpawner};
 use crate::input::Input;
 use crate::render::RenderQueue;
 use crate::time::Time;
@@ -114,7 +114,7 @@ impl App {
                 .borrow_mut()
                 .tick(delta_time, &sdl2.m_event_pump.keyboard_state());
 
-            for mut entity in self.m_entity_spawner.entity_iter_mut() {
+            for entity in self.m_entity_spawner.entity_iter_mut() {
                 entity.tick(scaled_delta_time);
             }
 
@@ -124,7 +124,7 @@ impl App {
             // render_tick()
             sdl2.m_canvas.clear();
 
-            for mut entity in self.m_entity_spawner.entity_iter_mut() {
+            for entity in self.m_entity_spawner.entity_iter_mut() {
                 entity.render_tick(scaled_delta_time, &mut self.m_render_queue);
             }
 
@@ -153,7 +153,7 @@ impl App {
         }
     }
 
-    pub fn spawn_entity(&mut self, entity: EntityRef) {
+    pub fn spawn_entity(&mut self, entity: Box<Entity>) {
         self.m_entity_spawner.spawn(entity);
     }
 
