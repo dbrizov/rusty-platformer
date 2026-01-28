@@ -283,7 +283,7 @@ fn get_input_config_path() -> PathBuf {
         // Return the root directory of the Cargo.toml file
         root_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
     } else {
-        // Return the root directory of the executable
+        // Return the current directory of the executable
         root_path = env::current_exe()
             .expect("Failed to get executable path")
             .parent()
