@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::env;
+use std::path::{Path, PathBuf};
 
 use sdl2::keyboard::Scancode;
 use serde::Deserialize;
@@ -175,7 +177,10 @@ struct InputConfig {
 }
 
 impl InputConfig {
-    fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    fn from_file<P>(path: P) -> Result<Self, Box<dyn std::error::Error>>
+    where
+        P: AsRef<Path>,
+    {
         let json: String = std::fs::read_to_string(path)?;
         let config: InputConfig = serde_json::from_str(&json)?;
         Ok(config)
@@ -271,21 +276,36 @@ impl InputMappings {
     }
 }
 
-fn get_input_settings_path() -> String {
-    String::from(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("config")
-            .join("input_settings.json")
-            .to_str()
-            .unwrap(),
-    )
+fn get_input_config_path() -> PathBuf {
+    let is_debug_build = cfg!(debug_assertions);
+    let root_path;
+    if is_debug_build {
+        // Return the root directory of the Cargo.toml file
+        root_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    } else {
+        // Return the root directory of the executable
+        root_path = env::current_exe()
+            .expect("Failed to get executable path")
+            .parent()
+            .expect("Exe has no parent")
+            .to_path_buf();
+    }
+
+    let config_file_path = root_path.join("config").join("input_config.json");
+    println!("input_config_path: '{}'", config_file_path.display());
+
+    config_file_path
 }
 
 fn get_input_mappings() -> Result<InputMappings, String> {
-    let input_settings_path: String = get_input_settings_path();
-    let input_config: InputConfig = InputConfig::from_file(&input_settings_path)
-        .map_err(|err| format!("Failed to create InputConfig from file: {}", err))?;
-    let input_mappings: InputMappings = InputMappings::from_config(input_config)?;
+    let input_config_path = get_input_config_path();
+    let input_config = InputConfig::from_file(&input_config_path).map_err(|_| {
+        format!(
+            "Failed to create InputConfig from file: {}",
+            input_config_path.display()
+        )
+    })?;
+    let input_mappings = InputMappings::from_config(input_config)?;
 
     Ok(input_mappings)
 }

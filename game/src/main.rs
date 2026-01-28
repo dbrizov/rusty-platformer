@@ -1,3 +1,4 @@
+use std::env;
 use std::path::PathBuf;
 
 use engine::{
@@ -16,5 +17,22 @@ fn main() {
 }
 
 fn get_assets_root() -> PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets")
+    let is_debug_build = cfg!(debug_assertions);
+    let root_path;
+    if is_debug_build {
+        // Return the root directory of the Cargo.toml file
+        root_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    } else {
+        // Return the root directory of the executable
+        root_path = env::current_exe()
+            .expect("Failed to get executable path")
+            .parent()
+            .expect("Exe has no parent")
+            .to_path_buf();
+    }
+
+    let assets_root = root_path.join("assets");
+    println!("assets_root_path: '{}'", assets_root.display());
+
+    assets_root
 }
