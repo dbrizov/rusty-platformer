@@ -1,4 +1,4 @@
-pub struct Time {
+pub struct Timer {
     m_timer: sdl2::TimerSubsystem,
     m_fps: u32,
     m_time_scale: f32,
@@ -7,10 +7,10 @@ pub struct Time {
     m_last_ticks: u32,
 }
 
-impl Time {
-    pub fn new(sdl: &sdl2::Sdl, fps: u32) -> Result<Time, String> {
+impl Timer {
+    pub fn new(sdl: &sdl2::Sdl, fps: u32) -> Result<Self, String> {
         let timer: sdl2::TimerSubsystem = sdl.timer()?;
-        Ok(Time {
+        Ok(Timer {
             m_timer: timer,
             m_fps: fps,
             m_time_scale: 1.0,

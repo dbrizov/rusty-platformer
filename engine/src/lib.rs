@@ -5,6 +5,6 @@ pub mod entity;
 pub mod input;
 pub mod math;
 pub mod render;
-pub mod time;
+pub mod timer;
 
 pub use engine_derive;

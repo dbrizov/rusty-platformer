@@ -13,7 +13,7 @@ use crate::assets::Assets;
 use crate::entity::{Entity, EntityId, EntitySpawner};
 use crate::input::Input;
 use crate::render::RenderQueue;
-use crate::time::Time;
+use crate::timer::Timer;
 
 const FPS: u32 = 60;
 const WINDOW_TITLE: &str = "Rusty Platformer";
@@ -27,7 +27,7 @@ pub struct Sdl2Context {
     m_canvas: Canvas<Window>,
     m_texture_creator: Rc<TextureCreator<WindowContext>>,
     m_event_pump: EventPump,
-    m_time: Time,
+    m_timer: Timer,
     m_input: Rc<RefCell<Input>>,
 }
 
@@ -45,7 +45,7 @@ impl Sdl2Context {
         let canvas = window.into_canvas().accelerated().build().unwrap();
         let texture_creator = Rc::new(canvas.texture_creator());
         let event_pump = sdl2.event_pump().unwrap();
-        let time = Time::new(&sdl2, FPS).unwrap();
+        let timer = Timer::new(&sdl2, FPS).unwrap();
         let input = Rc::new(RefCell::new(Input::new().unwrap()));
 
         Self {
@@ -54,7 +54,7 @@ impl Sdl2Context {
             m_canvas: canvas,
             m_texture_creator: texture_creator,
             m_event_pump: event_pump,
-            m_time: time,
+            m_timer: timer,
             m_input: input,
         }
     }
@@ -102,12 +102,12 @@ impl App {
                 }
             }
 
-            sdl2.m_time.tick();
+            sdl2.m_timer.tick();
 
             self.m_entity_spawner.resolve();
 
-            let delta_time = sdl2.m_time.get_delta_time();
-            let scaled_delta_time = delta_time * sdl2.m_time.get_time_scale();
+            let delta_time = sdl2.m_timer.get_delta_time();
+            let scaled_delta_time = delta_time * sdl2.m_timer.get_time_scale();
 
             // tick()
             sdl2.m_input
