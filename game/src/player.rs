@@ -60,7 +60,7 @@ impl PlayerComponent {
 }
 
 impl Component for PlayerComponent {
-    fn priority(&self) -> i32 {
+    fn get_priority(&self) -> i32 {
         component_priority::DEFAULT
     }
 

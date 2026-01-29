@@ -19,7 +19,7 @@ impl Entity {
             m_id: 0,
             m_components: Vec::new(),
             m_is_in_play: false,
-            m_is_ticking: false,
+            m_is_ticking: true,
         })
     }
 
@@ -55,7 +55,7 @@ impl Entity {
         }
     }
 
-    pub fn id(&self) -> EntityId {
+    pub fn get_id(&self) -> EntityId {
         self.m_id
     }
 
@@ -88,7 +88,7 @@ impl Entity {
         }
 
         self.m_components.push(comp.into_box());
-        self.m_components.sort_by_key(|c| c.priority());
+        self.m_components.sort_by_key(|c| c.get_priority());
     }
 
     pub fn get_component<T>(&self) -> Option<&T>
@@ -163,13 +163,13 @@ impl EntitySpawner {
     fn resolve_entity_destroy_requests(&mut self) {
         let destroy_requests = mem::take(&mut self.m_entity_destroy_requests);
         for entity in self.m_entities.iter_mut() {
-            let entity_id = entity.id();
+            let entity_id = entity.get_id();
             if destroy_requests.contains(&entity_id) {
                 entity.exit_play();
             }
         }
 
         self.m_entities
-            .retain(|entity| !destroy_requests.contains(&entity.id()));
+            .retain(|entity| !destroy_requests.contains(&entity.get_id()));
     }
 }

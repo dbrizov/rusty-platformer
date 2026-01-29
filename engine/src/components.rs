@@ -55,7 +55,7 @@ pub trait Component: ComponentBase + AsAny + 'static {
         Box::new(self)
     }
 
-    fn priority(&self) -> i32 {
+    fn get_priority(&self) -> i32 {
         component_priority::DEFAULT
     }
 
@@ -76,7 +76,7 @@ pub struct TransformComponent {
 }
 
 impl Component for TransformComponent {
-    fn priority(&self) -> i32 {
+    fn get_priority(&self) -> i32 {
         component_priority::TRANSFORM
     }
 }
@@ -122,7 +122,7 @@ pub struct ImageComponent {
 }
 
 impl Component for ImageComponent {
-    fn priority(&self) -> i32 {
+    fn get_priority(&self) -> i32 {
         component_priority::RENDER
     }
 
@@ -181,7 +181,7 @@ pub struct InputComponent {
 }
 
 impl Component for InputComponent {
-    fn priority(&self) -> i32 {
+    fn get_priority(&self) -> i32 {
         component_priority::INPUT
     }
 

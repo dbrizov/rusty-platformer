@@ -115,7 +115,9 @@ impl App {
                 .tick(delta_time, &sdl2.m_event_pump.keyboard_state());
 
             for entity in self.m_entity_spawner.entity_iter_mut() {
-                entity.tick(scaled_delta_time);
+                if entity.is_ticking() {
+                    entity.tick(scaled_delta_time);
+                }
             }
 
             // physics_tick()
