@@ -104,7 +104,7 @@ impl App {
 
             sdl2.m_timer.tick();
 
-            self.m_entity_spawner.resolve();
+            self.m_entity_spawner.resolve_requests();
 
             let delta_time = sdl2.m_timer.get_delta_time();
             let scaled_delta_time = delta_time * sdl2.m_timer.get_time_scale();
