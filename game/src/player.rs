@@ -6,7 +6,6 @@ use engine::components::{
     Component, ComponentBase, ImageComponent, InputComponent, TransformComponent,
     component_priority,
 };
-use engine::engine_derive::ComponentBase;
 use engine::entity::Entity;
 use engine::input::Input;
 use engine::math::Vec2;

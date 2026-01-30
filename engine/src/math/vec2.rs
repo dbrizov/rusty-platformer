@@ -1,6 +1,5 @@
+use std::f32::EPSILON;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-
-pub const EPSILON: f32 = 0.001;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec2 {

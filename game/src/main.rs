@@ -1,10 +1,8 @@
 use std::env;
 use std::path::PathBuf;
 
-use engine::{
-    app::{App, Sdl2Context},
-    assets::Assets,
-};
+use engine::app::{App, Sdl2Context};
+use engine::assets::Assets;
 
 mod player;
 
