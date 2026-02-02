@@ -16,7 +16,7 @@ pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> Box<Enti
     let input_comp = InputComponent::new(input);
 
     let texture_path = assets
-        .get_asset_path(&["images", "entities", "player", "idle", "00.png"])
+        .get_asset_path(["images", "entities", "player", "idle", "00.png"])
         .unwrap();
     let texture_id = assets.load_texture(texture_path).unwrap();
     let mut image_comp = ImageComponent::new(texture_id);
