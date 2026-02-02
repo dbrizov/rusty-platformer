@@ -3,14 +3,14 @@ use std::collections::{VecDeque, vec_deque::Drain};
 use crate::core::assets::TextureId;
 use crate::math::Vec2;
 
-pub struct RenderStruct {
+pub struct RenderData {
     pub texture_id: TextureId,
     pub position: Vec2,
     pub prev_position: Vec2, // needed for physics interpolation
     pub scale: Vec2,
 }
 
-impl RenderStruct {
+impl RenderData {
     pub fn new(texture_id: TextureId, position: Vec2, prev_position: Vec2, scale: Vec2) -> Self {
         Self {
             texture_id: texture_id,
@@ -22,7 +22,7 @@ impl RenderStruct {
 }
 
 pub struct RenderQueue {
-    m_deque: VecDeque<RenderStruct>,
+    m_deque: VecDeque<RenderData>,
 }
 
 impl RenderQueue {
@@ -32,15 +32,15 @@ impl RenderQueue {
         }
     }
 
-    pub fn enqueue(&mut self, render_struct: RenderStruct) {
+    pub fn enqueue(&mut self, render_struct: RenderData) {
         self.m_deque.push_back(render_struct);
     }
 
-    pub fn dequeue(&mut self) -> Option<RenderStruct> {
+    pub fn dequeue(&mut self) -> Option<RenderData> {
         self.m_deque.pop_front()
     }
 
-    pub fn drain(&mut self) -> Drain<'_, RenderStruct> {
+    pub fn drain(&mut self) -> Drain<'_, RenderData> {
         self.m_deque.drain(..)
     }
 }

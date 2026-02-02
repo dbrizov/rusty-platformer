@@ -4,7 +4,7 @@ use std::rc::Rc;
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, Sdl2ImageContext};
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
+use sdl2::rect::FRect;
 use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
@@ -130,23 +130,23 @@ impl App {
                 entity.render_tick(scaled_delta_time, &mut self.m_render_queue);
             }
 
-            for render_struct in self.m_render_queue.drain() {
-                if let Some(texture) = assets.get_texture(render_struct.texture_id) {
+            for render_data in self.m_render_queue.drain() {
+                if let Some(texture) = assets.get_texture(render_data.texture_id) {
                     let query = texture.query();
-                    let destination = Rect::new(
-                        render_struct.position.x as i32,
-                        render_struct.position.y as i32,
-                        query.width * (render_struct.scale.x as u32),
-                        query.height * (render_struct.scale.y as u32),
+                    let destination = FRect::new(
+                        render_data.position.x,
+                        render_data.position.y,
+                        (query.width as f32) * render_data.scale.x,
+                        (query.height as f32) * render_data.scale.y,
                     );
 
-                    if let Err(err) = sdl2.m_canvas.copy(texture, None, destination) {
+                    if let Err(err) = sdl2.m_canvas.copy_f(texture, None, destination) {
                         eprintln!("Render error: {}", err);
                     }
                 } else {
                     eprintln!(
                         "Texture with 'texture_id={}' not found",
-                        render_struct.texture_id
+                        render_data.texture_id
                     );
                 }
             }

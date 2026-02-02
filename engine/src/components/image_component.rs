@@ -1,6 +1,6 @@
 use crate::components::{Component, ComponentBase, TransformComponent, component_priority};
 use crate::core::assets::TextureId;
-use crate::core::render::{RenderQueue, RenderStruct};
+use crate::core::render::{RenderQueue, RenderData};
 use crate::entity::Entity;
 use crate::math::Vec2;
 
@@ -23,7 +23,7 @@ impl Component for ImageComponent {
             .unwrap();
 
         let t_scale = transform.get_scale();
-        render_queue.enqueue(RenderStruct::new(
+        render_queue.enqueue(RenderData::new(
             self.m_texture_id,
             transform.get_position(),
             transform.get_prev_position(),
