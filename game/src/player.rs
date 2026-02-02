@@ -1,13 +1,13 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use engine::assets::Assets;
 use engine::components::{
     Component, ComponentBase, ImageComponent, InputComponent, TransformComponent,
     component_priority,
 };
+use engine::core::assets::Assets;
+use engine::core::input::Input;
 use engine::entity::Entity;
-use engine::input::Input;
 use engine::math::Vec2;
 
 pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> Box<Entity> {

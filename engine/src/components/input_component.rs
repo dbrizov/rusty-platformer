@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::components::{Component, ComponentBase, component_priority};
+use crate::core::input::{Input, InputEvent, InputEventType, SubscriberId};
 use crate::entity::Entity;
-use crate::input::{Input, InputEvent, InputEventType, SubscriberId};
 
 #[derive(ComponentBase)]
 pub struct InputComponent {

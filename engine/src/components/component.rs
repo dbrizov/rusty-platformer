@@ -1,7 +1,7 @@
 use std::any::Any;
 
+use crate::core::render::RenderQueue;
 use crate::entity::Entity;
-use crate::render::RenderQueue;
 
 pub mod component_priority {
     pub const INPUT: i32 = -150;

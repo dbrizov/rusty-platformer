@@ -1,8 +1,8 @@
-use crate::assets::TextureId;
 use crate::components::{Component, ComponentBase, TransformComponent, component_priority};
+use crate::core::assets::TextureId;
+use crate::core::render::{RenderQueue, RenderStruct};
 use crate::entity::Entity;
 use crate::math::Vec2;
-use crate::render::{RenderQueue, RenderStruct};
 
 #[derive(ComponentBase)]
 pub struct ImageComponent {

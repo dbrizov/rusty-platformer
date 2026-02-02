@@ -1,5 +1,5 @@
 use crate::components::Component;
-use crate::render::RenderQueue;
+use crate::core::render::RenderQueue;
 
 pub type EntityId = u32;
 

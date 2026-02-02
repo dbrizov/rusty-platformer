@@ -9,11 +9,11 @@ use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 use sdl2::{EventPump, Sdl};
 
-use crate::assets::Assets;
+use crate::core::assets::Assets;
+use crate::core::input::Input;
+use crate::core::render::RenderQueue;
+use crate::core::timer::Timer;
 use crate::entity::{Entity, EntityId, EntitySpawner};
-use crate::input::Input;
-use crate::render::RenderQueue;
-use crate::timer::Timer;
 
 const FPS: u32 = 60;
 const WINDOW_TITLE: &str = "Rusty Platformer";
