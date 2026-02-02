@@ -15,7 +15,8 @@ use crate::core::render::RenderQueue;
 use crate::core::timer::Timer;
 use crate::entity::{Entity, EntityId, EntitySpawner};
 
-const FPS: u32 = 60;
+const TARGET_FPS: u32 = 60;
+const VSYNC_ENABLED: bool = true;
 const WINDOW_TITLE: &str = "Rusty Platformer";
 const SCREEN_WIDTH: u32 = 640;
 const SCREEN_HEIGHT: u32 = 480;
@@ -42,10 +43,18 @@ impl Sdl2Context {
             .position_centered()
             .build()
             .unwrap();
-        let canvas = window.into_canvas().accelerated().build().unwrap();
-        let texture_creator = Rc::new(canvas.texture_creator());
+
+        let canvas;
+        let canvas_builder = window.into_canvas().accelerated();
+        if VSYNC_ENABLED {
+            canvas = canvas_builder.present_vsync().build().unwrap();
+        } else {
+            canvas = canvas_builder.build().unwrap();
+        }
+
+        let texture_creator: Rc<TextureCreator<WindowContext>> = Rc::new(canvas.texture_creator());
         let event_pump = sdl2.event_pump().unwrap();
-        let timer = Timer::new(&sdl2, FPS).unwrap();
+        let timer = Timer::new(&sdl2, TARGET_FPS, VSYNC_ENABLED).unwrap();
         let input = Rc::new(RefCell::new(Input::new().unwrap()));
 
         Self {
@@ -82,18 +91,10 @@ impl App {
     }
 
     pub fn run(&mut self, sdl2: &mut Sdl2Context, assets: &mut Assets) {
-        let mut events: Vec<Event> = Vec::new();
-
-        // Debug render
-        sdl2.m_canvas.set_draw_color(Color::RGB(14, 219, 248));
-
         'running: loop {
-            events.clear();
-            for event in sdl2.m_event_pump.poll_iter() {
-                events.push(event);
-            }
+            sdl2.m_timer.frame_start();
 
-            for event in &events {
+            for event in sdl2.m_event_pump.poll_iter() {
                 match event {
                     Event::Quit { .. } => {
                         break 'running;
@@ -101,8 +102,6 @@ impl App {
                     _ => {}
                 }
             }
-
-            sdl2.m_timer.tick();
 
             self.m_entity_spawner.resolve_requests();
 
@@ -124,6 +123,7 @@ impl App {
             // TODO
 
             // render_tick()
+            sdl2.m_canvas.set_draw_color(Color::RGB(14, 219, 248));
             sdl2.m_canvas.clear();
 
             for entity in self.m_entity_spawner.entity_iter_mut() {
@@ -152,6 +152,8 @@ impl App {
             }
 
             sdl2.m_canvas.present();
+
+            sdl2.m_timer.frame_end();
         }
     }
 
