@@ -28,7 +28,7 @@ impl Assets {
         }
     }
 
-    pub fn asset_path<I, P>(&self, parts: I) -> PathBuf
+    pub fn get_asset_path<I, P>(&self, parts: I) -> Result<PathBuf, String>
     where
         I: IntoIterator<Item = P>,
         P: AsRef<Path>,
@@ -37,10 +37,10 @@ impl Assets {
         path.extend(parts);
 
         if !path.exists() {
-            panic!("Asset not found: {}", path.display());
+            return Err(format!("Asset not found: {}", path.display()));
         }
 
-        path
+        Ok(path)
     }
 
     pub fn load_texture<P>(&mut self, path: P) -> Result<TextureId, String>

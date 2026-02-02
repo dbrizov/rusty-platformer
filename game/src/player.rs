@@ -15,9 +15,11 @@ pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> Box<Enti
     let player_comp = PlayerComponent::new();
     let input_comp = InputComponent::new(input);
 
-    let image_path = assets.asset_path(&["images", "entities", "player", "idle", "00.png"]);
-    let image_id = assets.load_texture(image_path).unwrap();
-    let mut image_comp = ImageComponent::new(image_id);
+    let texture_path = assets
+        .get_asset_path(&["images", "entities", "player", "idle", "00.png"])
+        .unwrap();
+    let texture_id = assets.load_texture(texture_path).unwrap();
+    let mut image_comp = ImageComponent::new(texture_id);
     image_comp.set_scale(Vec2::one() * 2.0);
 
     let mut entity = Entity::new();
