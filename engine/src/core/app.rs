@@ -15,12 +15,6 @@ use crate::core::render::RenderQueue;
 use crate::core::timer::Timer;
 use crate::entity::{Entity, EntityId, EntitySpawner};
 
-const TARGET_FPS: u32 = 60;
-const VSYNC_ENABLED: bool = true;
-const WINDOW_TITLE: &str = "Rusty Platformer";
-const SCREEN_WIDTH: u32 = 640;
-const SCREEN_HEIGHT: u32 = 480;
-
 pub struct Sdl2Context {
     _m_sdl2: Sdl,
     _m_sdl2_image: Sdl2ImageContext,
@@ -33,20 +27,26 @@ pub struct Sdl2Context {
 }
 
 impl Sdl2Context {
-    pub fn new() -> Self {
+    pub fn new(
+        target_fps: u32,
+        vsync_enabled: bool,
+        window_title: &str,
+        window_width: u32,
+        window_height: u32,
+    ) -> Self {
         let sdl2 = sdl2::init().unwrap();
         let sdl2_image = sdl2::image::init(InitFlag::PNG).unwrap();
 
         let video = sdl2.video().unwrap();
         let window = video
-            .window(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT)
+            .window(window_title, window_width, window_height)
             .position_centered()
             .build()
             .unwrap();
 
         let canvas;
         let canvas_builder = window.into_canvas().accelerated();
-        if VSYNC_ENABLED {
+        if vsync_enabled {
             canvas = canvas_builder.present_vsync().build().unwrap();
         } else {
             canvas = canvas_builder.build().unwrap();
@@ -54,7 +54,7 @@ impl Sdl2Context {
 
         let texture_creator: Rc<TextureCreator<WindowContext>> = Rc::new(canvas.texture_creator());
         let event_pump = sdl2.event_pump().unwrap();
-        let timer = Timer::new(&sdl2, TARGET_FPS, VSYNC_ENABLED).unwrap();
+        let timer = Timer::new(&sdl2, target_fps, vsync_enabled).unwrap();
         let input = Rc::new(RefCell::new(Input::new().unwrap()));
 
         Self {
