@@ -113,13 +113,13 @@ fn main() {
 
     // --- Source/destination paths
     let config_src = manifest_dir.join("../engine/config");
-    let config_dst = target_profile_dir.join("engine").join("config");
+    let config_dst = target_profile_dir.join("config");
     warn_kv("CONFIG_SRC", format!("'{}'", config_src.display()));
     warn_kv("CONFIG_DST", format!("'{}'", config_dst.display()));
     warn_kv("CONFIG_SRC_EXISTS", config_src.exists());
 
     let assets_src = manifest_dir.join("assets");
-    let assets_dst = target_profile_dir.join("game").join("assets");
+    let assets_dst = target_profile_dir.join("assets");
     warn_kv("ASSETS_SRC", format!("'{}'", assets_src.display()));
     warn_kv("ASSETS_DST", format!("'{}'", assets_dst.display()));
     warn_kv("ASSETS_SRC_EXISTS", assets_src.exists());
@@ -147,10 +147,10 @@ fn main() {
         panic!("ASSETS_SRC not found: {}", assets_src.display());
     }
 
-    copy_dir_recursive(&config_src, &config_dst).expect("Copy engine/config failed");
+    copy_dir_recursive(&config_src, &config_dst).expect("Copy ../engine/config failed");
     warn_kv("COPIED_CONFIG_TO", format!("'{}'", config_dst.display()));
 
-    copy_dir_recursive(&assets_src, &assets_dst).expect("Copy game/assets failed");
+    copy_dir_recursive(&assets_src, &assets_dst).expect("Copy assets failed");
     warn_kv("COPIED_ASSETS_TO", format!("'{}'", assets_dst.display()));
 
     // Optional: stats after copy

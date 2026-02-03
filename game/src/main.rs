@@ -55,7 +55,7 @@ fn get_input_config_path() -> PathBuf {
     if is_debug_build {
         config_file_path = root_path.join("../engine/config").join("input_config.json");
     } else {
-        config_file_path = root_path.join("engine/config").join("input_config.json");
+        config_file_path = root_path.join("config").join("input_config.json");
     }
 
     println!("input_config_path: '{}'", config_file_path.display());
@@ -64,15 +64,8 @@ fn get_input_config_path() -> PathBuf {
 }
 
 fn get_assets_root_path() -> PathBuf {
-    let is_debug_build = cfg!(debug_assertions);
     let root_path = get_root_path();
-    let assets_root;
-
-    if is_debug_build {
-        assets_root = root_path.join("assets");
-    } else {
-        assets_root = root_path.join("game").join("assets");
-    }
+    let assets_root = root_path.join("assets");
 
     println!("assets_root_path: '{}'", assets_root.display());
 
