@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::path::Path;
 use std::rc::Rc;
 
 use sdl2::event::Event;
@@ -33,6 +34,7 @@ impl Sdl2Context {
         window_title: &str,
         window_width: u32,
         window_height: u32,
+        input_config_path: impl AsRef<Path>,
     ) -> Self {
         let sdl2 = sdl2::init().unwrap();
         let sdl2_image = sdl2::image::init(InitFlag::PNG).unwrap();
@@ -55,7 +57,7 @@ impl Sdl2Context {
         let texture_creator: Rc<TextureCreator<WindowContext>> = Rc::new(canvas.texture_creator());
         let event_pump = sdl2.event_pump().unwrap();
         let timer = Timer::new(&sdl2, target_fps, vsync_enabled).unwrap();
-        let input = Rc::new(RefCell::new(Input::new().unwrap()));
+        let input = Rc::new(RefCell::new(Input::new(input_config_path).unwrap()));
 
         Self {
             _m_sdl2: sdl2,

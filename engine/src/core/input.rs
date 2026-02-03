@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use sdl2::keyboard::Scancode;
 use serde::Deserialize;
@@ -34,8 +33,8 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn new() -> Result<Self, String> {
-        let input_mappings: InputMappings = get_input_mappings()?;
+    pub fn new(input_config_path: impl AsRef<Path>) -> Result<Self, String> {
+        let input_mappings: InputMappings = get_input_mappings(input_config_path)?;
         let relevant_keys: Vec<Scancode> = input_mappings.relevant_keys();
         let axis_values: HashMap<String, f32> = input_mappings
             .axes
@@ -276,35 +275,10 @@ impl InputMappings {
     }
 }
 
-fn get_input_config_path() -> PathBuf {
-    let is_debug_build = cfg!(debug_assertions);
-    let root_path;
-    if is_debug_build {
-        // Return the root directory of the Cargo.toml file
-        root_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-    } else {
-        // Return the current directory of the executable
-        root_path = env::current_exe()
-            .expect("Failed to get executable path")
-            .parent()
-            .expect("Exe has no parent")
-            .to_path_buf();
-    }
-
-    let config_file_path = root_path.join("config").join("input_config.json");
-    println!("input_config_path: '{}'", config_file_path.display());
-
-    config_file_path
-}
-
-fn get_input_mappings() -> Result<InputMappings, String> {
-    let input_config_path = get_input_config_path();
-    let input_config = InputConfig::from_file(&input_config_path).map_err(|_| {
-        format!(
-            "Failed to create InputConfig from file: {}",
-            input_config_path.display()
-        )
-    })?;
+fn get_input_mappings(input_config_path: impl AsRef<Path>) -> Result<InputMappings, String> {
+    let path = input_config_path.as_ref();
+    let input_config = InputConfig::from_file(path)
+        .map_err(|_| format!("Failed to create InputConfig from file: {}", path.display()))?;
     let input_mappings = InputMappings::from_config(input_config)?;
 
     Ok(input_mappings)

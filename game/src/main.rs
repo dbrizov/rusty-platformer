@@ -13,12 +13,14 @@ const WINDOW_WIDTH: u32 = 640;
 const WINDOW_HEIGHT: u32 = 480;
 
 fn main() {
+    // TODO Remove input config out of Sdl2Context
     let mut sdl2 = Sdl2Context::new(
         TARGET_FPS,
         VSYNC_ENABLED,
         WINDOW_TITLE,
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
+        get_input_config_path(),
     );
 
     let mut assets = Assets::new(get_assets_root_path(), sdl2.get_texture_creator());
@@ -27,7 +29,7 @@ fn main() {
     app.run(&mut sdl2, &mut assets);
 }
 
-fn get_assets_root_path() -> PathBuf {
+fn get_root_path() -> PathBuf {
     let is_debug_build = cfg!(debug_assertions);
     let root_path;
     if is_debug_build {
@@ -42,7 +44,36 @@ fn get_assets_root_path() -> PathBuf {
             .to_path_buf();
     }
 
-    let assets_root = root_path.join("assets");
+    root_path
+}
+
+fn get_input_config_path() -> PathBuf {
+    let is_debug_build = cfg!(debug_assertions);
+    let root_path = get_root_path();
+    let config_file_path;
+
+    if is_debug_build {
+        config_file_path = root_path.join("../engine/config").join("input_config.json");
+    } else {
+        config_file_path = root_path.join("engine/config").join("input_config.json");
+    }
+
+    println!("input_config_path: '{}'", config_file_path.display());
+
+    config_file_path
+}
+
+fn get_assets_root_path() -> PathBuf {
+    let is_debug_build = cfg!(debug_assertions);
+    let root_path = get_root_path();
+    let assets_root;
+
+    if is_debug_build {
+        assets_root = root_path.join("assets");
+    } else {
+        assets_root = root_path.join("game").join("assets");
+    }
+
     println!("assets_root_path: '{}'", assets_root.display());
 
     assets_root
