@@ -6,7 +6,8 @@ use sdl2::image::LoadTexture;
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::video::WindowContext;
 
-pub type TextureId = u32;
+pub type TextureId = i32;
+pub const INVALID_TEXTURE_ID: TextureId = -1;
 
 pub struct Assets {
     m_assets_root: String,

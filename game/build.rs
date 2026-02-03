@@ -9,6 +9,7 @@ fn dir_stats(p: &Path) -> (usize, usize) {
         let Ok(rd) = fs::read_dir(p) else {
             return;
         };
+
         for e in rd.flatten() {
             let Ok(t) = e.file_type() else {
                 continue;
@@ -21,11 +22,14 @@ fn dir_stats(p: &Path) -> (usize, usize) {
             }
         }
     }
+
     let mut files = 0;
     let mut dirs = 0;
+
     if p.exists() {
         walk(p, &mut files, &mut dirs);
     }
+
     (files, dirs)
 }
 
@@ -53,6 +57,7 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
             fs::copy(&from, &to)?;
         }
     }
+
     Ok(())
 }
 
@@ -65,7 +70,6 @@ fn main() {
     let manifest_dir =
         PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR missing"));
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR missing"));
-
     warn_kv(
         "CARGO_MANIFEST_DIR",
         format!("'{}'", manifest_dir.display()),

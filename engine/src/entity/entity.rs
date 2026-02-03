@@ -1,7 +1,8 @@
 use crate::components::Component;
 use crate::core::render::RenderQueue;
 
-pub type EntityId = u32;
+pub type EntityId = i32;
+pub const INVALID_ENTITY_ID: EntityId = -1;
 
 pub struct Entity {
     m_id: EntityId,
@@ -13,7 +14,7 @@ pub struct Entity {
 impl Entity {
     pub fn new() -> Box<Self> {
         Box::new(Self {
-            m_id: 0,
+            m_id: INVALID_ENTITY_ID,
             m_components: Vec::new(),
             m_is_in_play: false,
             m_is_ticking: true,

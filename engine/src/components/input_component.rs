@@ -3,18 +3,23 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::components::{Component, ComponentBase, component_priority};
-use crate::core::input::{Input, InputEvent, InputEventType, SubscriberId};
+use crate::core::input::{
+    INVALID_INPUT_EVENT_HANDLER_ID, Input, InputEvent, InputEventHandlerId, InputEventType,
+};
 use crate::entity::Entity;
+
+pub type BindingId = i32;
+pub const INVALID_BINDING_ID: BindingId = -1;
 
 #[derive(ComponentBase)]
 pub struct InputComponent {
     m_entity: *mut Entity,
     m_input: Rc<RefCell<Input>>,
-    m_input_subscriber_id: SubscriberId,
-    m_next_handler_id: u32,
-    m_handlers_by_axis: HashMap<String, Vec<(u32, Box<dyn Fn(f32)>)>>,
-    m_handlers_by_action_pressed: HashMap<String, Vec<(u32, Box<dyn Fn()>)>>,
-    m_handlers_by_action_released: HashMap<String, Vec<(u32, Box<dyn Fn()>)>>,
+    m_input_event_handler_id: InputEventHandlerId,
+    m_next_binding_id: BindingId,
+    m_axis_bindings: HashMap<String, Vec<(BindingId, Box<dyn Fn(f32)>)>>,
+    m_action_pressed_bindings: HashMap<String, Vec<(BindingId, Box<dyn Fn()>)>>,
+    m_action_released_bindings: HashMap<String, Vec<(BindingId, Box<dyn Fn()>)>>,
 }
 
 impl Component for InputComponent {
@@ -24,10 +29,10 @@ impl Component for InputComponent {
 
     fn enter_play(&mut self) {
         let this: *const InputComponent = self;
-        self.m_input_subscriber_id =
+        self.m_input_event_handler_id =
             self.m_input
                 .borrow_mut()
-                .subscribe_to_input_event(move |event| unsafe {
+                .add_input_event_handler(move |event| unsafe {
                     (*this).on_input_event(event);
                 });
     }
@@ -35,7 +40,7 @@ impl Component for InputComponent {
     fn exit_play(&mut self) {
         self.m_input
             .borrow_mut()
-            .unsubscribe_from_input_event(self.m_input_subscriber_id);
+            .remove_input_event_handler(self.m_input_event_handler_id);
     }
 }
 
@@ -44,36 +49,36 @@ impl InputComponent {
         Self {
             m_entity: std::ptr::null_mut(),
             m_input: input,
-            m_input_subscriber_id: 0,
-            m_next_handler_id: 0,
-            m_handlers_by_axis: HashMap::new(),
-            m_handlers_by_action_pressed: HashMap::new(),
-            m_handlers_by_action_released: HashMap::new(),
+            m_input_event_handler_id: INVALID_INPUT_EVENT_HANDLER_ID,
+            m_next_binding_id: 0,
+            m_axis_bindings: HashMap::new(),
+            m_action_pressed_bindings: HashMap::new(),
+            m_action_released_bindings: HashMap::new(),
         }
     }
 
-    pub fn bind_axis<T>(&mut self, axis_name: &str, handler: T) -> u32
+    pub fn bind_axis<T>(&mut self, axis_name: &str, func: T) -> BindingId
     where
         T: Fn(f32) + 'static,
     {
         let axis_name_copy = axis_name.to_string();
-        let handler_id = self.m_next_handler_id;
-        self.m_next_handler_id += 1;
+        let binding_id = self.m_next_binding_id;
+        self.m_next_binding_id += 1;
 
-        self.m_handlers_by_axis
+        self.m_axis_bindings
             .entry(axis_name_copy)
             .or_insert_with(Vec::new)
-            .push((handler_id, Box::new(handler)));
+            .push((binding_id, Box::new(func)));
 
-        handler_id
+        binding_id
     }
 
-    pub fn unbind_axis(&mut self, axis_name: &str, handler_id: u32) {
-        if let Some(handlers) = self.m_handlers_by_axis.get_mut(axis_name) {
-            handlers.retain(|(id, _)| *id != handler_id);
+    pub fn unbind_axis(&mut self, axis_name: &str, binding_id: BindingId) {
+        if let Some(bindings) = self.m_axis_bindings.get_mut(axis_name) {
+            bindings.retain(|(id, _)| *id != binding_id);
 
-            if handlers.is_empty() {
-                self.m_handlers_by_axis.remove(axis_name);
+            if bindings.is_empty() {
+                self.m_axis_bindings.remove(axis_name);
             }
         }
     }
@@ -82,78 +87,78 @@ impl InputComponent {
         &mut self,
         action_name: &str,
         event_type: InputEventType,
-        handler: T,
-    ) -> u32
+        func: T,
+    ) -> BindingId
     where
         T: Fn() + 'static,
     {
         let action_name_copy = action_name.to_string();
-        let handler_id = self.m_next_handler_id;
-        self.m_next_handler_id += 1;
+        let binding_id = self.m_next_binding_id;
+        self.m_next_binding_id += 1;
 
         match event_type {
             InputEventType::Pressed => {
-                self.m_handlers_by_action_pressed
+                self.m_action_pressed_bindings
                     .entry(action_name_copy)
                     .or_insert_with(Vec::new)
-                    .push((handler_id, Box::new(handler)));
+                    .push((binding_id, Box::new(func)));
             }
             InputEventType::Released => {
-                self.m_handlers_by_action_released
+                self.m_action_released_bindings
                     .entry(action_name_copy)
                     .or_insert_with(Vec::new)
-                    .push((handler_id, Box::new(handler)));
+                    .push((binding_id, Box::new(func)));
             }
             _ => {}
         }
 
-        handler_id
+        binding_id
     }
 
-    pub fn unbind_action(&mut self, action_name: &str, handler_id: u32) {
-        if let Some(handlers) = self.m_handlers_by_action_pressed.get_mut(action_name) {
-            handlers.retain(|(id, _)| *id != handler_id);
+    pub fn unbind_action(&mut self, action_name: &str, binding_id: BindingId) {
+        if let Some(bindings) = self.m_action_pressed_bindings.get_mut(action_name) {
+            bindings.retain(|(id, _)| *id != binding_id);
 
-            if handlers.is_empty() {
-                self.m_handlers_by_action_pressed.remove(action_name);
+            if bindings.is_empty() {
+                self.m_action_pressed_bindings.remove(action_name);
             }
         }
 
-        if let Some(handlers) = self.m_handlers_by_action_released.get_mut(action_name) {
-            handlers.retain(|(id, _)| *id != handler_id);
+        if let Some(bindings) = self.m_action_released_bindings.get_mut(action_name) {
+            bindings.retain(|(id, _)| *id != binding_id);
 
-            if handlers.is_empty() {
-                self.m_handlers_by_action_released.remove(action_name);
+            if bindings.is_empty() {
+                self.m_action_released_bindings.remove(action_name);
             }
         }
     }
 
     pub fn clear_all_bindings(&mut self) {
-        self.m_handlers_by_axis.clear();
-        self.m_handlers_by_action_pressed.clear();
-        self.m_handlers_by_action_released.clear();
+        self.m_axis_bindings.clear();
+        self.m_action_pressed_bindings.clear();
+        self.m_action_released_bindings.clear();
     }
 
     fn on_input_event(&self, event: &InputEvent) {
         match event.ev_type {
             InputEventType::Axis => {
-                if let Some(handlers) = self.m_handlers_by_axis.get(event.ev_name) {
-                    for (_, handler) in handlers {
-                        handler(event.axis_value);
+                if let Some(bindings) = self.m_axis_bindings.get(event.ev_name) {
+                    for (_, func) in bindings {
+                        func(event.axis_value);
                     }
                 }
             }
             InputEventType::Pressed => {
-                if let Some(handlers) = self.m_handlers_by_action_pressed.get(event.ev_name) {
-                    for (_, handler) in handlers {
-                        handler();
+                if let Some(bindings) = self.m_action_pressed_bindings.get(event.ev_name) {
+                    for (_, func) in bindings {
+                        func();
                     }
                 }
             }
             InputEventType::Released => {
-                if let Some(handlers) = self.m_handlers_by_action_released.get(event.ev_name) {
-                    for (_, handler) in handlers {
-                        handler();
+                if let Some(bindings) = self.m_action_released_bindings.get(event.ev_name) {
+                    for (_, func) in bindings {
+                        func();
                     }
                 }
             }

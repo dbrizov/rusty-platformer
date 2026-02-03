@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use engine::components::{
-    Component, ComponentBase, ImageComponent, InputComponent, TransformComponent,
-    component_priority,
+    BindingId, Component, ComponentBase, INVALID_BINDING_ID, ImageComponent, InputComponent,
+    TransformComponent, component_priority,
 };
 use engine::core::assets::Assets;
 use engine::core::input::Input;
@@ -36,8 +36,8 @@ pub struct PlayerComponent {
     m_entity: *mut Entity,
     m_speed: f32,
     m_movement_input: Vec2,
-    m_horizontal_id: u32,
-    m_vertical_id: u32,
+    m_x_axis_binding_id: BindingId,
+    m_y_axis_binding_id: BindingId,
 }
 
 impl PlayerComponent {
@@ -46,17 +46,17 @@ impl PlayerComponent {
             m_entity: std::ptr::null_mut(),
             m_speed: 300.0,
             m_movement_input: Vec2::zero(),
-            m_horizontal_id: 0,
-            m_vertical_id: 0,
+            m_x_axis_binding_id: INVALID_BINDING_ID,
+            m_y_axis_binding_id: INVALID_BINDING_ID,
         }
     }
 
-    fn set_movement_input_x(&mut self, axis: f32) {
-        self.m_movement_input.x = axis;
+    fn set_movement_input_x(&mut self, x_axis: f32) {
+        self.m_movement_input.x = x_axis;
     }
 
-    fn set_movement_input_y(&mut self, axis: f32) {
-        self.m_movement_input.y = axis;
+    fn set_movement_input_y(&mut self, y_axis: f32) {
+        self.m_movement_input.y = y_axis;
     }
 }
 
@@ -73,11 +73,11 @@ impl Component for PlayerComponent {
                 .get_component_mut::<InputComponent>()
                 .unwrap();
 
-            (*this).m_horizontal_id = input_comp.bind_axis("horizontal", move |axis| {
+            (*this).m_x_axis_binding_id = input_comp.bind_axis("horizontal", move |axis| {
                 (*this).set_movement_input_x(axis);
             });
 
-            (*this).m_vertical_id = input_comp.bind_axis("vertical", move |axis| {
+            (*this).m_y_axis_binding_id = input_comp.bind_axis("vertical", move |axis| {
                 (*this).set_movement_input_y(axis);
             });
         }
@@ -89,8 +89,8 @@ impl Component for PlayerComponent {
             .get_component_mut::<InputComponent>()
             .unwrap();
 
-        input_comp.unbind_axis("horizontal", self.m_horizontal_id);
-        input_comp.unbind_axis("vertical", self.m_vertical_id);
+        input_comp.unbind_axis("horizontal", self.m_x_axis_binding_id);
+        input_comp.unbind_axis("vertical", self.m_y_axis_binding_id);
         self.m_movement_input = Vec2::zero();
     }
 
