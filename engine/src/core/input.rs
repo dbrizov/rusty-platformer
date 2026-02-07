@@ -31,8 +31,8 @@ pub struct Input {
     m_input_mappings: InputMappings,
     m_axis_values: HashMap<String, f32>,
     m_relevant_keys: Vec<Scancode>,
-    m_pressed_keys_this_frame: Vec<bool>,
-    m_pressed_keys_last_frame: Vec<bool>,
+    m_pressed_keys_this_frame: Vec<u8>,
+    m_pressed_keys_last_frame: Vec<u8>,
 }
 
 impl Input {
@@ -53,8 +53,8 @@ impl Input {
             m_input_mappings: input_mappings,
             m_axis_values: axis_values,
             m_relevant_keys: relevant_keys,
-            m_pressed_keys_this_frame: vec![false; num_scancodes],
-            m_pressed_keys_last_frame: vec![false; num_scancodes],
+            m_pressed_keys_this_frame: vec![0; num_scancodes],
+            m_pressed_keys_last_frame: vec![0; num_scancodes],
         })
     }
 
@@ -65,8 +65,8 @@ impl Input {
         for (action, keys) in &self.m_input_mappings.actions {
             for key in keys {
                 let key_index = *key as usize;
-                let pressed_now: bool = self.m_pressed_keys_this_frame[key_index];
-                let pressed_before: bool = self.m_pressed_keys_last_frame[key_index];
+                let pressed_now = self.m_pressed_keys_this_frame[key_index] != 0;
+                let pressed_before = self.m_pressed_keys_last_frame[key_index] != 0;
 
                 if pressed_now && !pressed_before {
                     self.dispatch_event(InputEvent {
@@ -87,7 +87,7 @@ impl Input {
         // Dispatch axis events
         let any_pressed = |keys: &Vec<Scancode>| {
             for key in keys {
-                if self.m_pressed_keys_this_frame[*key as usize] {
+                if self.m_pressed_keys_this_frame[*key as usize] != 0 {
                     return true;
                 }
             }
@@ -137,16 +137,15 @@ impl Input {
     where
         T: Fn(&InputEvent) + 'static,
     {
-        let sub_id = self.m_next_handler_id;
+        let handler_id = self.m_next_handler_id;
         self.m_next_handler_id += 1;
-        self.m_handlers.push((sub_id, Box::new(handler)));
+        self.m_handlers.push((handler_id, Box::new(handler)));
 
-        sub_id
+        handler_id
     }
 
-    pub fn remove_input_event_handler(&mut self, subscriber_id: InputEventHandlerId) {
-        self.m_handlers
-            .retain(|(sub_id, _)| *sub_id != subscriber_id);
+    pub fn remove_input_event_handler(&mut self, handler_id: InputEventHandlerId) {
+        self.m_handlers.retain(|(h_id, _)| *h_id != handler_id);
     }
 
     fn dispatch_event(&self, event: InputEvent) {
@@ -159,7 +158,8 @@ impl Input {
         for key in &self.m_relevant_keys {
             let key_index = *key as usize;
             self.m_pressed_keys_last_frame[key_index] = self.m_pressed_keys_this_frame[key_index];
-            self.m_pressed_keys_this_frame[key_index] = keyboard_state.is_scancode_pressed(*key);
+            self.m_pressed_keys_this_frame[key_index] =
+                keyboard_state.is_scancode_pressed(*key) as u8;
         }
     }
 }
