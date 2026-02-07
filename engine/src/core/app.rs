@@ -13,7 +13,7 @@ use crate::core::assets::Assets;
 use crate::core::input::Input;
 use crate::core::render::RenderQueue;
 use crate::core::timer::Timer;
-use crate::entity::{Entity, EntityId, EntitySpawner};
+use crate::entity::EntitySpawner;
 
 pub struct Sdl2Context {
     _m_sdl2: Sdl,
@@ -156,12 +156,8 @@ impl App {
             sdl2.m_timer.frame_end();
         }
     }
-
-    pub fn spawn_entity(&mut self, entity: Box<Entity>) {
-        self.m_entity_spawner.spawn(entity);
-    }
-
-    pub fn destroy_entity(&mut self, entity_id: EntityId) {
-        self.m_entity_spawner.destroy(entity_id);
+    
+    pub fn get_entity_spawner(&mut self) -> &mut EntitySpawner {
+        &mut self.m_entity_spawner
     }
 }

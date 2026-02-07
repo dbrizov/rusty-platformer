@@ -11,7 +11,6 @@ const WINDOW_WIDTH: u32 = 640;
 const WINDOW_HEIGHT: u32 = 480;
 
 fn main() {
-    // TODO Remove input config out of Sdl2Context
     let mut sdl2 = Sdl2Context::new(
         TARGET_FPS,
         VSYNC_ENABLED,
@@ -20,8 +19,10 @@ fn main() {
         WINDOW_HEIGHT,
     );
 
-    let mut assets = Assets::new(get_assets_root_path(), sdl2.get_texture_creator());
     let mut app = App::new();
-    app.spawn_entity(player::create_player(&mut assets, sdl2.get_input()));
+    let mut assets = Assets::new(get_assets_root_path(), sdl2.get_texture_creator());
+
+    app.get_entity_spawner().spawn_entity(player::create_player(&mut assets, sdl2.get_input()));
+
     app.run(&mut sdl2, &mut assets);
 }

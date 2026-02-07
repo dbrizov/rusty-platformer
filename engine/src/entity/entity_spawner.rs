@@ -28,11 +28,22 @@ impl EntitySpawner {
         self.m_entities.iter_mut().map(Box::as_mut)
     }
 
-    pub fn spawn(&mut self, entity: Box<Entity>) {
+    pub fn spawn_entity(&mut self, mut entity: Box<Entity>) -> EntityId {
+        let entity_id = self.m_next_entity_id;
+        self.m_next_entity_id += 1;
+        entity.set_id(entity_id);
+
         self.m_entity_spawn_requests.push(entity);
+
+        entity_id
     }
 
-    pub fn destroy(&mut self, entity_id: EntityId) {
+    pub fn destroy_entity(&mut self, entity_id: EntityId) {
+        // Remove from spawns requests if present
+        self.m_entity_spawn_requests
+            .retain(|entity| entity.get_id() != entity_id);
+
+        // Mark for destroy
         self.m_entity_destroy_requests.insert(entity_id);
     }
 
@@ -46,10 +57,7 @@ impl EntitySpawner {
         let mut spawn_requests = mem::take(&mut self.m_entity_spawn_requests);
 
         for entity in &mut spawn_requests {
-            entity.set_id(self.m_next_entity_id);
             entity.enter_play();
-
-            self.m_next_entity_id += 1;
         }
 
         self.m_entities.append(&mut spawn_requests);
