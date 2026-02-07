@@ -6,7 +6,7 @@ use engine::components::{
     TransformComponent, component_priority,
 };
 use engine::core::assets::Assets;
-use engine::core::input::Input;
+use engine::core::input::{Input, InputEventType};
 use engine::entity::Entity;
 use engine::math::Vec2;
 
@@ -38,6 +38,7 @@ pub struct PlayerComponent {
     m_movement_input: Vec2,
     m_x_axis_binding_id: BindingId,
     m_y_axis_binding_id: BindingId,
+    m_slow_motion_action_binding_id: BindingId,
 }
 
 impl PlayerComponent {
@@ -48,6 +49,7 @@ impl PlayerComponent {
             m_movement_input: Vec2::zero(),
             m_x_axis_binding_id: INVALID_BINDING_ID,
             m_y_axis_binding_id: INVALID_BINDING_ID,
+            m_slow_motion_action_binding_id: INVALID_BINDING_ID,
         }
     }
 
@@ -57,6 +59,10 @@ impl PlayerComponent {
 
     fn set_movement_input_y(&mut self, y_axis: f32) {
         self.m_movement_input.y = y_axis;
+    }
+
+    fn toggle_slow_motion(&self) {
+        println!("TODO Implement toggle_slow_motion");
     }
 }
 
@@ -80,6 +86,11 @@ impl Component for PlayerComponent {
             (*this).m_y_axis_binding_id = input_comp.bind_axis("vertical", move |axis| {
                 (*this).set_movement_input_y(axis);
             });
+
+            (*this).m_slow_motion_action_binding_id =
+                input_comp.bind_action("slow_motion", InputEventType::Pressed, move || {
+                    (*this).toggle_slow_motion();
+                });
         }
     }
 
@@ -91,6 +102,8 @@ impl Component for PlayerComponent {
 
         input_comp.unbind_axis("horizontal", self.m_x_axis_binding_id);
         input_comp.unbind_axis("vertical", self.m_y_axis_binding_id);
+        input_comp.unbind_action("slow_motion", self.m_slow_motion_action_binding_id);
+
         self.m_movement_input = Vec2::zero();
     }
 

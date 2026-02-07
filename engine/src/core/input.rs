@@ -31,8 +31,8 @@ pub struct Input {
     m_input_mappings: InputMappings,
     m_axis_values: HashMap<String, f32>,
     m_relevant_keys: Vec<Scancode>,
-    m_pressed_keys_this_frame: Vec<Scancode>,
-    m_pressed_keys_last_frame: Vec<Scancode>,
+    m_pressed_keys_this_frame: Vec<bool>,
+    m_pressed_keys_last_frame: Vec<bool>,
 }
 
 impl Input {
@@ -46,14 +46,15 @@ impl Input {
             .map(|k| (k.clone(), 0.0))
             .collect();
 
+        let num_scancodes = Scancode::Num as usize;
         Ok(Input {
             m_handlers: Vec::new(),
             m_next_handler_id: 0,
             m_input_mappings: input_mappings,
             m_axis_values: axis_values,
             m_relevant_keys: relevant_keys,
-            m_pressed_keys_this_frame: Vec::new(),
-            m_pressed_keys_last_frame: Vec::new(),
+            m_pressed_keys_this_frame: vec![false; num_scancodes],
+            m_pressed_keys_last_frame: vec![false; num_scancodes],
         })
     }
 
@@ -63,8 +64,9 @@ impl Input {
         // Dispatch action events
         for (action, keys) in &self.m_input_mappings.actions {
             for key in keys {
-                let pressed_now: bool = self.m_pressed_keys_this_frame.contains(key);
-                let pressed_before: bool = self.m_pressed_keys_last_frame.contains(key);
+                let key_index = *key as usize;
+                let pressed_now: bool = self.m_pressed_keys_this_frame[key_index];
+                let pressed_before: bool = self.m_pressed_keys_last_frame[key_index];
 
                 if pressed_now && !pressed_before {
                     self.dispatch_event(InputEvent {
@@ -83,15 +85,19 @@ impl Input {
         }
 
         // Dispatch axis events
+        let any_pressed = |keys: &Vec<Scancode>| {
+            for key in keys {
+                if self.m_pressed_keys_this_frame[*key as usize] {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
         for (axis, axis_mapping) in &self.m_input_mappings.axes {
-            let any_positive: bool = axis_mapping
-                .positive
-                .iter()
-                .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
-            let any_negative: bool = axis_mapping
-                .negative
-                .iter()
-                .any(|key: &Scancode| self.m_pressed_keys_this_frame.contains(key));
+            let any_positive: bool = any_pressed(&axis_mapping.positive);
+            let any_negative: bool = any_pressed(&axis_mapping.negative);
 
             let old_axis_value: f32;
             let new_axis_value: f32 = {
@@ -150,16 +156,10 @@ impl Input {
     }
 
     fn update_pressed_keys(&mut self, keyboard_state: &sdl2::keyboard::KeyboardState) {
-        self.m_pressed_keys_last_frame.clear();
-        for key in &self.m_pressed_keys_this_frame {
-            self.m_pressed_keys_last_frame.push(*key);
-        }
-
-        self.m_pressed_keys_this_frame.clear();
         for key in &self.m_relevant_keys {
-            if keyboard_state.is_scancode_pressed(*key) {
-                self.m_pressed_keys_this_frame.push(*key);
-            }
+            let key_index = *key as usize;
+            self.m_pressed_keys_last_frame[key_index] = self.m_pressed_keys_this_frame[key_index];
+            self.m_pressed_keys_this_frame[key_index] = keyboard_state.is_scancode_pressed(*key);
         }
     }
 }
