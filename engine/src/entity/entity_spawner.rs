@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::mem;
 
 use crate::entity::{Entity, EntityId};
@@ -6,6 +6,7 @@ use crate::entity::{Entity, EntityId};
 pub struct EntitySpawner {
     m_next_entity_id: EntityId,
     m_entities: Vec<Box<Entity>>,
+    m_entity_index_by_id: HashMap<EntityId, usize>,
     m_entity_spawn_requests: Vec<Box<Entity>>,
     m_entity_destroy_requests: HashSet<EntityId>,
 }
@@ -15,6 +16,7 @@ impl EntitySpawner {
         Self {
             m_next_entity_id: 0,
             m_entities: Vec::new(),
+            m_entity_index_by_id: HashMap::new(),
             m_entity_spawn_requests: Vec::new(),
             m_entity_destroy_requests: HashSet::new(),
         }
@@ -54,11 +56,21 @@ impl EntitySpawner {
 
     fn resolve_spawn_requests(&mut self) {
         // Take memory, because an entity might make a new spawn request in enter_play()
-        let mut spawn_requests = mem::take(&mut self.m_entity_spawn_requests);
+        let spawn_requests = mem::take(&mut self.m_entity_spawn_requests);
 
-        for entity in spawn_requests.drain(..) {
+        let start_index = self.m_entities.len();
+
+        // Add them to the list of entities
+        for entity in spawn_requests {
+            let entity_id = entity.get_id();
+            let index = self.m_entities.len();
+            self.m_entity_index_by_id.insert(entity_id, index);
             self.m_entities.push(entity);
-            self.m_entities.last_mut().unwrap().enter_play();
+        }
+
+        // Call enter_play() for the newly spawned entities
+        for entity in &mut self.m_entities[start_index..] {
+            entity.enter_play();
         }
     }
 
@@ -66,13 +78,31 @@ impl EntitySpawner {
         // Take memory, because an entity might make a new destroy request in exit_play()
         let destroy_requests = mem::take(&mut self.m_entity_destroy_requests);
 
-        self.m_entities.retain_mut(|entity| {
-            let should_destroy = destroy_requests.contains(&entity.get_id());
-            if should_destroy {
-                entity.exit_play();
+        // Call exit_play() while entities are still present in the map
+        for &entity_id in &destroy_requests {
+            if let Some(index) = self.m_entity_index_by_id.get(&entity_id) {
+                self.m_entities[*index].exit_play();
+            }
+        }
+
+        // Erase the entities
+        for entity_id in destroy_requests {
+            let Some(index) = self.m_entity_index_by_id.remove(&entity_id) else {
+                continue;
+            };
+
+            let last_index = self.m_entities.len() - 1;
+
+            if index != last_index {
+                // Move last entity into the hole.
+                self.m_entities.swap(index, last_index);
+
+                // Fix moved entity's index.
+                let moved_entity_id = self.m_entities[index].get_id();
+                self.m_entity_index_by_id.insert(moved_entity_id, index);
             }
 
-            !should_destroy
-        });
+            self.m_entities.pop();
+        }
     }
 }

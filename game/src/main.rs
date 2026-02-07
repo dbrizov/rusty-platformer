@@ -1,4 +1,4 @@
-use engine::core::app::App;
+use engine::{core::app::App, math::Vec2};
 
 mod player;
 
@@ -17,8 +17,8 @@ fn main() {
         WINDOW_HEIGHT,
     );
 
-    let player_entity = player::create_player(&mut app);
-    app.get_entity_spawner().spawn_entity(player_entity);
+    let p0 = player::create_player(&mut app, Vec2::from_xy(50.0, 50.0));
+    app.get_entity_spawner().spawn_entity(p0);
 
     app.run();
 }

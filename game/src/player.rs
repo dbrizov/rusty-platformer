@@ -7,8 +7,10 @@ use engine::core::input::InputEventType;
 use engine::entity::Entity;
 use engine::math::Vec2;
 
-pub fn create_player(app: &mut App) -> Box<Entity> {
-    let transform_comp = TransformComponent::new();
+pub fn create_player(app: &mut App, pos: Vec2) -> Box<Entity> {
+    let mut transform_comp = TransformComponent::new();
+    transform_comp.set_position(pos);
+
     let player_comp = PlayerComponent::new();
     let input_comp = InputComponent::new(app.get_input_rc());
 
