@@ -6,23 +6,22 @@ use sdl2::image::LoadTexture;
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::video::WindowContext;
 
+use crate::core::path_utils::get_assets_root_path;
+
 pub type TextureId = i32;
 pub const INVALID_TEXTURE_ID: TextureId = -1;
 
 pub struct Assets {
-    m_assets_root: String,
+    m_assets_root: PathBuf,
     m_texture_creator: Rc<TextureCreator<WindowContext>>,
     m_textures: HashMap<TextureId, Texture<'static>>,
     m_next_texture_id: TextureId,
 }
 
 impl Assets {
-    pub fn new<P>(assets_root: P, texture_creator: Rc<TextureCreator<WindowContext>>) -> Self
-    where
-        P: AsRef<Path>,
-    {
+    pub fn new(texture_creator: Rc<TextureCreator<WindowContext>>) -> Self {
         Self {
-            m_assets_root: assets_root.as_ref().to_string_lossy().into(),
+            m_assets_root: get_assets_root_path(),
             m_texture_creator: texture_creator,
             m_textures: HashMap::new(),
             m_next_texture_id: 0,

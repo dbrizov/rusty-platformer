@@ -1,24 +1,22 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use engine::components::{
     BindingId, Component, ComponentBase, INVALID_BINDING_ID, ImageComponent, InputComponent,
     TransformComponent, component_priority,
 };
-use engine::core::assets::Assets;
-use engine::core::input::{Input, InputEventType};
+use engine::core::app::App;
+use engine::core::input::InputEventType;
 use engine::entity::Entity;
 use engine::math::Vec2;
 
-pub fn create_player(assets: &mut Assets, input: Rc<RefCell<Input>>) -> Box<Entity> {
+pub fn create_player(app: &mut App) -> Box<Entity> {
     let transform_comp = TransformComponent::new();
     let player_comp = PlayerComponent::new();
-    let input_comp = InputComponent::new(input);
+    let input_comp = InputComponent::new(app.get_input());
 
-    let texture_path = assets
+    let texture_path = app
+        .get_assets()
         .get_asset_path(["images", "entities", "player", "idle", "00.png"])
         .unwrap();
-    let texture_id = assets.load_texture(texture_path).unwrap();
+    let texture_id = app.get_assets().load_texture(texture_path).unwrap();
     let mut image_comp = ImageComponent::new(texture_id);
     image_comp.set_scale(Vec2::one() * 2.0);
 

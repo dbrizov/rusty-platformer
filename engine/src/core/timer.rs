@@ -1,5 +1,7 @@
+use std::rc::Rc;
+
 pub struct Timer {
-    m_timer: sdl2::TimerSubsystem,
+    m_timer_subsystem: Rc<sdl2::TimerSubsystem>,
     m_target_fps: u32,
     m_vsync_enabled: bool,
     m_time_scale: f32,
@@ -11,14 +13,17 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn new(sdl: &sdl2::Sdl, target_fps: u32, vsync_enabled: bool) -> Result<Self, String> {
-        let timer: sdl2::TimerSubsystem = sdl.timer()?;
-        let frequency = timer.performance_frequency();
-        let frame_start_ticks = timer.performance_counter();
-        let last_frame_start_ticks = timer.performance_counter();
+    pub fn new(
+        timer_subsystem: Rc<sdl2::TimerSubsystem>,
+        target_fps: u32,
+        vsync_enabled: bool,
+    ) -> Self {
+        let frequency = timer_subsystem.performance_frequency();
+        let frame_start_ticks = timer_subsystem.performance_counter();
+        let last_frame_start_ticks = timer_subsystem.performance_counter();
 
-        Ok(Timer {
-            m_timer: timer,
+        Timer {
+            m_timer_subsystem: timer_subsystem,
             m_target_fps: target_fps,
             m_vsync_enabled: vsync_enabled,
             m_time_scale: 1.0,
@@ -27,11 +32,11 @@ impl Timer {
             m_frequency: frequency,
             m_frame_start_ticks: frame_start_ticks,
             m_last_frame_start_ticks: last_frame_start_ticks,
-        })
+        }
     }
 
     pub fn frame_start(&mut self) {
-        let now_ticks = self.m_timer.performance_counter();
+        let now_ticks = self.m_timer_subsystem.performance_counter();
         let diff_ticks = now_ticks - self.m_last_frame_start_ticks;
 
         self.m_frame_start_ticks = now_ticks; // Remember when this frame started (for frame_end)
@@ -58,7 +63,7 @@ impl Timer {
         let target_frame_seconds = 1.0 / (self.m_target_fps as f64);
 
         loop {
-            let now_ticks = self.m_timer.performance_counter();
+            let now_ticks = self.m_timer_subsystem.performance_counter();
             let elapsed_seconds =
                 ((now_ticks - self.m_frame_start_ticks) as f64) / (self.m_frequency as f64);
 
@@ -74,7 +79,7 @@ impl Timer {
                 // - 1ms is usually larger than the OS wake-up jitter.
                 // - It gives us a safety margin so we don’t overshoot.
                 let sleep_ms = ((remaining_seconds - 0.001) * 1000.0) as u32;
-                self.m_timer.delay(sleep_ms);
+                self.m_timer_subsystem.delay(sleep_ms);
             }
         }
     }

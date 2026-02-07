@@ -1,6 +1,4 @@
-use engine::core::app::{App, Sdl2Context};
-use engine::core::assets::Assets;
-use engine::core::path_utils::*;
+use engine::core::app::App;
 
 mod player;
 
@@ -11,7 +9,7 @@ const WINDOW_WIDTH: u32 = 640;
 const WINDOW_HEIGHT: u32 = 480;
 
 fn main() {
-    let mut sdl2 = Sdl2Context::new(
+    let mut app = App::new(
         TARGET_FPS,
         VSYNC_ENABLED,
         WINDOW_TITLE,
@@ -19,10 +17,8 @@ fn main() {
         WINDOW_HEIGHT,
     );
 
-    let mut app = App::new();
-    let mut assets = Assets::new(get_assets_root_path(), sdl2.get_texture_creator());
+    let player_entity = player::create_player(&mut app);
+    app.get_entity_spawner().spawn_entity(player_entity);
 
-    app.get_entity_spawner().spawn_entity(player::create_player(&mut assets, sdl2.get_input()));
-
-    app.run(&mut sdl2, &mut assets);
+    app.run();
 }
