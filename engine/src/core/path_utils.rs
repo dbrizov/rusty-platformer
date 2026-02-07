@@ -33,8 +33,6 @@ pub fn get_input_config_path() -> PathBuf {
         config_file_path = root_path.join("config/input_config.json");
     }
 
-    println!("input_config_path: '{}'", config_file_path.display());
-
     config_file_path
 }
 
@@ -48,8 +46,6 @@ pub fn get_assets_root_path() -> PathBuf {
     } else {
         assets_root_path = root_path.join("assets");
     }
-
-    println!("assets_root_path: '{}'", assets_root_path.display());
 
     assets_root_path
 }

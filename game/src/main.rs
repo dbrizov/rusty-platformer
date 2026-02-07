@@ -18,7 +18,6 @@ fn main() {
         WINDOW_TITLE,
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
-        get_input_config_path(),
     );
 
     let mut assets = Assets::new(get_assets_root_path(), sdl2.get_texture_creator());

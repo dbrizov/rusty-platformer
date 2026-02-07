@@ -4,6 +4,8 @@ use std::path::Path;
 use sdl2::keyboard::Scancode;
 use serde::Deserialize;
 
+use crate::core::path_utils::get_input_config_path;
+
 pub type InputEventHandlerId = i32;
 pub const INVALID_INPUT_EVENT_HANDLER_ID: InputEventHandlerId = -1;
 
@@ -34,7 +36,8 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn new(input_config_path: impl AsRef<Path>) -> Result<Self, String> {
+    pub fn new() -> Result<Self, String> {
+        let input_config_path = get_input_config_path();
         let input_mappings: InputMappings = get_input_mappings(input_config_path)?;
         let relevant_keys: Vec<Scancode> = input_mappings.relevant_keys();
         let axis_values: HashMap<String, f32> = input_mappings
