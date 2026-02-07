@@ -10,7 +10,7 @@ use engine::math::Vec2;
 pub fn create_player(app: &mut App) -> Box<Entity> {
     let transform_comp = TransformComponent::new();
     let player_comp = PlayerComponent::new();
-    let input_comp = InputComponent::new(app.get_input());
+    let input_comp = InputComponent::new(app.get_input_rc());
 
     let texture_path = app
         .get_assets()

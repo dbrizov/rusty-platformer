@@ -88,13 +88,13 @@ impl App {
             Sdl2Context::new(vsync_enabled, window_title, window_width, window_height);
 
         let timer = Timer::new(
-            sdl2_context.m_timer_subsystem.clone(),
+            Rc::clone(&sdl2_context.m_timer_subsystem),
             target_fps,
             vsync_enabled,
         );
 
         let input = Rc::new(RefCell::new(Input::new().unwrap()));
-        let assets = Assets::new(sdl2_context.m_texture_creator.clone());
+        let assets = Assets::new(Rc::clone(&sdl2_context.m_texture_creator));
         let render_queue = RenderQueue::new();
         let entity_spawner = EntitySpawner::new();
 
@@ -157,8 +157,8 @@ impl App {
         &mut self.m_timer
     }
 
-    pub fn get_input(&mut self) -> Rc<RefCell<Input>> {
-        self.m_input.clone()
+    pub fn get_input_rc(&mut self) -> Rc<RefCell<Input>> {
+        Rc::clone(&self.m_input)
     }
 
     pub fn get_assets(&mut self) -> &mut Assets {
