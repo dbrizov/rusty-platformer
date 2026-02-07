@@ -56,25 +56,23 @@ impl EntitySpawner {
         // Take memory, because an entity might make a new spawn request in enter_play()
         let mut spawn_requests = mem::take(&mut self.m_entity_spawn_requests);
 
-        for entity in &mut spawn_requests {
-            entity.enter_play();
+        for entity in spawn_requests.drain(..) {
+            self.m_entities.push(entity);
+            self.m_entities.last_mut().unwrap().enter_play();
         }
-
-        self.m_entities.append(&mut spawn_requests);
     }
 
     fn resolve_destroy_requests(&mut self) {
         // Take memory, because an entity might make a new destroy request in exit_play()
         let destroy_requests = mem::take(&mut self.m_entity_destroy_requests);
 
-        for entity in self.m_entities.iter_mut() {
-            let entity_id = entity.get_id();
-            if destroy_requests.contains(&entity_id) {
+        self.m_entities.retain_mut(|entity| {
+            let should_destroy = destroy_requests.contains(&entity.get_id());
+            if should_destroy {
                 entity.exit_play();
             }
-        }
 
-        self.m_entities
-            .retain(|entity| !destroy_requests.contains(&entity.get_id()));
+            !should_destroy
+        });
     }
 }
