@@ -23,6 +23,7 @@ pub fn create_player(app: &mut App, pos: Vec2) -> Box<Entity> {
     image_comp.set_scale(Vec2::one() * 2.0);
 
     let mut entity = Entity::new();
+    entity.set_is_ticking(true);
     entity.add_component(transform_comp);
     entity.add_component(player_comp);
     entity.add_component(input_comp);

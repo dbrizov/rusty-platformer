@@ -22,12 +22,32 @@ impl EntitySpawner {
         }
     }
 
-    pub fn entity_iter(&self) -> impl Iterator<Item = &Entity> {
+    pub fn entities_iter(&self) -> impl Iterator<Item = &Entity> {
         self.m_entities.iter().map(Box::as_ref)
     }
 
-    pub fn entity_iter_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
+    pub fn entities_iter_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
         self.m_entities.iter_mut().map(Box::as_mut)
+    }
+
+    pub fn ticking_entities_iter(&self) -> impl Iterator<Item = &Entity> {
+        // TODO Optimize to not make O(n) filtering
+        self.entities_iter().filter(|e| e.is_ticking())
+    }
+
+    pub fn ticking_entities_iter_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
+        // TODO Optimize to not make O(n) filtering
+        self.entities_iter_mut().filter(|e| e.is_ticking())
+    }
+
+    pub fn get_entity(&mut self, entity_id: EntityId) -> Option<&Entity> {
+        let index = *self.m_entity_index_by_id.get(&entity_id)?;
+        self.m_entities.get(index).map(Box::as_ref)
+    }
+
+    pub fn get_entity_mut(&mut self, entity_id: EntityId) -> Option<&mut Entity> {
+        let index = *self.m_entity_index_by_id.get(&entity_id)?;
+        self.m_entities.get_mut(index).map(Box::as_mut)
     }
 
     pub fn spawn_entity(&mut self, mut entity: Box<Entity>) -> EntityId {

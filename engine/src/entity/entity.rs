@@ -17,7 +17,7 @@ impl Entity {
             m_id: INVALID_ENTITY_ID,
             m_components: Vec::new(),
             m_is_in_play: false,
-            m_is_ticking: true,
+            m_is_ticking: false,
         })
     }
 

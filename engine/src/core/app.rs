@@ -133,17 +133,15 @@ impl App {
             );
 
             // entities.tick()
-            for entity in self.m_entity_spawner.entity_iter_mut() {
-                if entity.is_ticking() {
-                    entity.tick(scaled_delta_time);
-                }
+            for entity in self.m_entity_spawner.ticking_entities_iter_mut() {
+                entity.tick(scaled_delta_time);
             }
 
             // entities.physics_tick()
             // TODO
 
             // entities.render_tick()
-            for entity in self.m_entity_spawner.entity_iter_mut() {
+            for entity in self.m_entity_spawner.entities_iter_mut() {
                 entity.render_tick(scaled_delta_time, &mut self.m_render_queue);
             }
 
