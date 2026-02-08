@@ -108,7 +108,7 @@ impl Component for PlayerComponent {
         self.m_movement_input = Vec2::zero();
     }
 
-    fn tick(&mut self, _delta_time: f32) {
+    fn physics_tick(&mut self, _fixed_delta_time: f32) {
         let transform_comp = self
             .get_entity_mut()
             .get_component_mut::<TransformComponent>()
@@ -123,7 +123,7 @@ impl Component for PlayerComponent {
 
         let pos_delta_x = Vec2::right() * movement_input.x;
         let pos_delta_y = Vec2::up() * movement_input.y;
-        let pos_delta = (pos_delta_x + pos_delta_y) * self.m_speed * _delta_time;
+        let pos_delta = (pos_delta_x + pos_delta_y) * self.m_speed * _fixed_delta_time;
         let new_pos = transform_comp.get_position() + pos_delta;
         transform_comp.set_position(new_pos);
     }

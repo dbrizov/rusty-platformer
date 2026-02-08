@@ -30,9 +30,9 @@ impl TransformComponent {
         self.m_position
     }
 
-    pub fn set_position(&mut self, pos: Vec2) {
+    pub fn set_position(&mut self, position: Vec2) {
         self.m_prev_position = self.m_position;
-        self.m_position = pos;
+        self.m_position = position;
     }
 
     pub fn get_prev_position(&self) -> Vec2 {

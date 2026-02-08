@@ -56,6 +56,10 @@ impl Vec2 {
     pub fn dot(a: Vec2, b: Vec2) -> f32 {
         a.x * b.x + a.y * b.y
     }
+
+    pub fn lerp(a: Vec2, b: Vec2, t: f32) -> Vec2 {
+        a + (b - a) * t
+    }
 }
 
 // Vec2 + Vec2

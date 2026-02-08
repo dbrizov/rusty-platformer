@@ -11,9 +11,11 @@ use sdl2::{EventPump, Sdl, TimerSubsystem};
 
 use crate::core::assets::Assets;
 use crate::core::input::Input;
+use crate::core::physics::Physics;
 use crate::core::render::RenderQueue;
 use crate::core::timer::Timer;
 use crate::entity::EntitySpawner;
+use crate::math::Vec2;
 
 pub struct Sdl2Context {
     _m_sdl2: Sdl,
@@ -72,6 +74,7 @@ pub struct App {
     m_timer: Timer,
     m_input: Rc<RefCell<Input>>,
     m_assets: Assets,
+    m_physics: Physics,
     m_render_queue: RenderQueue,
     m_entity_spawner: EntitySpawner,
 }
@@ -83,6 +86,8 @@ impl App {
         window_title: &str,
         window_width: u32,
         window_height: u32,
+        physics_ticks_per_second: u32,
+        physics_interpolation: bool,
     ) -> Self {
         let sdl2_context =
             Sdl2Context::new(vsync_enabled, window_title, window_width, window_height);
@@ -95,6 +100,7 @@ impl App {
 
         let input = Rc::new(RefCell::new(Input::new().unwrap()));
         let assets = Assets::new(Rc::clone(&sdl2_context.m_texture_creator));
+        let physics = Physics::new(physics_ticks_per_second, physics_interpolation);
         let render_queue = RenderQueue::new();
         let entity_spawner = EntitySpawner::new();
 
@@ -103,6 +109,7 @@ impl App {
             m_timer: timer,
             m_input: input,
             m_assets: assets,
+            m_physics: physics,
             m_render_queue: render_queue,
             m_entity_spawner: entity_spawner,
         }
@@ -138,7 +145,10 @@ impl App {
             }
 
             // entities.physics_tick()
-            // TODO
+            let spawner: *mut EntitySpawner = &mut self.m_entity_spawner;
+            self.m_physics.tick_entities(scaled_delta_time, || unsafe {
+                (*spawner).ticking_entities_iter_mut()
+            });
 
             // entities.render_tick()
             for entity in self.m_entity_spawner.entities_iter_mut() {
@@ -177,9 +187,15 @@ impl App {
         for render_data in self.m_render_queue.drain() {
             if let Some(texture) = self.m_assets.get_texture(render_data.texture_id) {
                 let query = texture.query();
+                let position = Vec2::lerp(
+                    render_data.prev_position,
+                    render_data.position,
+                    self.m_physics.get_interpolation_fraction(),
+                );
+
                 let destination = FRect::new(
-                    render_data.position.x,
-                    render_data.position.y,
+                    position.x,
+                    position.y,
                     (query.width as f32) * render_data.scale.x,
                     (query.height as f32) * render_data.scale.y,
                 );
