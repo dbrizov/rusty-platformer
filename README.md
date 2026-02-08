@@ -49,5 +49,5 @@ brew install sdl2 sdl2_image sdl2_ttf
 ```
 Add this line to your `~/.zprofile` or `~/.bashrc` depending on whether you use `zsh` or `bash`.
 ```
-export LIBRARY_PATH="$LIBRARY_PATH:$HOMEBREW_PREFIX/lib"
+export LIBRARY_PATH="${LIBRARY_PATH:+$LIBRARY_PATH:}$HOMEBREW_PREFIX/lib"
 ```
