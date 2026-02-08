@@ -27,7 +27,7 @@ $env:PATH = "$env:VCPKG_ROOT;$env:PATH"
 > [!NOTE]
 > Setting environment variables in this manner only affects the current terminal session. To make these changes permanent across all sessions, set them through the Windows System Environment Variables panel.
 4. Restart your computer so that `VCPKG_ROOT` is recognized.
-5. Open a new terminal to verify.
+5. Open a new terminal and verify.
 ```
 vcpkg --version
 ```
