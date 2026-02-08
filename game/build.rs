@@ -65,6 +65,24 @@ fn main() {
     // Re-run triggers
     println!("cargo:rerun-if-changed=assets");
     println!("cargo:rerun-if-changed=../engine/config");
+    
+    // Choose triplet per target triple
+    let target = env::var("TARGET").expect("TARGET not set");
+    let triplet = match target.as_str() {
+        "x86_64-pc-windows-msvc" => "x64-windows",
+        "x86_64-unknown-linux-gnu" => "x64-linux",
+        "aarch64-apple-darwin" => "arm64-osx",
+        other => {
+            // reasonable default or fail loudly
+            eprintln!("Unknown TARGET={other}, using default triplet");
+            "x64-windows"
+        }
+    };
+
+    unsafe {
+        env::set_var("VCPKGRS_TRIPLET", triplet);
+        env::set_var("VCPKGRS_DYNAMIC", "1");
+    }
 
     // Core env
     let manifest_dir =
@@ -88,6 +106,8 @@ fn main() {
         "CARGO_CFG_TARGET_ENV",
         "CARGO_CFG_TARGET_FAMILY",
         "CARGO_TARGET_DIR",
+        "VCPKGRS_TRIPLET",
+        "VCPKGRS_DYNAMIC",
     ] {
         if let Ok(v) = env::var(k) {
             warn_kv(k, format!("'{}'", v));
