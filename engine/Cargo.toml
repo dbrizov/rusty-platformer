@@ -5,6 +5,30 @@ edition = "2024"
 
 [dependencies]
 engine_derive = { path = "../engine_derive" }
-sdl2 = { version = "0.38.0", features = ["image", "ttf", "mixer"] }
+sdl2 = { version = "0.38.0", features = ["image", "ttf", "use-vcpkg", "static-link"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+
+[package.metadata.vcpkg]
+git = "https://github.com/microsoft/vcpkg"
+rev = "670f6dddaafc59c5dfe0587a130d59a35c48ea38"
+dependencies = ["sdl2", "sdl2-image", "sdl2-ttf"]
+
+[package.metadata.vcpkg.target]
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md", dependencies = [
+    "sdl2",
+    "sdl2-image",
+    "sdl2-ttf",
+] }
+
+x86_64-unknown-linux-gnu = { triplet = "x64-linux", dependencies = [
+    "sdl2",
+    "sdl2-image",
+    "sdl2-ttf",
+] }
+
+aarch64-apple-darwin = { triplet = "arm64-osx", dependencies = [
+    "sdl2",
+    "sdl2-image",
+    "sdl2-ttf",
+] }
